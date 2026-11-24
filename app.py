@@ -21,7 +21,7 @@ from pdf_generator import gerar_pdf_auditoria, gerar_pdf_ocorrencia
 LIMIAR_GRUPO_COLETIVO = 10
 
 st.set_page_config(
-    page_title="Observatório da Segurança Privada PT",
+    page_title="Vigilante Informado - Apoio Técnico & CCT",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -113,11 +113,37 @@ st.markdown(
         border-radius: 12px;
         margin-bottom: 1.2rem;
         box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+        line-height: 1.55;
     }
     .guide-card h3 {
         color: #0F172A;
         margin-top: 0;
-        font-size: 1.15rem;
+        margin-bottom: 0.75rem;
+        font-size: 1.18rem;
+    }
+    .guide-card h4 {
+        color: #0F172A;
+        margin-top: 1rem;
+        margin-bottom: 0.4rem;
+        font-size: 1.02rem;
+    }
+    .rule-highlight {
+        background-color: #F1F5F9;
+        border-left: 4px solid #0284C7;
+        padding: 0.85rem 1rem;
+        border-radius: 6px;
+        margin: 0.75rem 0;
+        font-size: 0.92rem;
+        color: #1E293B;
+    }
+    .warning-highlight {
+        background-color: #FEF2F2;
+        border-left: 4px solid #DC2626;
+        padding: 0.85rem 1rem;
+        border-radius: 6px;
+        margin: 0.75rem 0;
+        font-size: 0.92rem;
+        color: #7F1D1D;
     }
     .alert-amber {
         background-color: #FFFBEB;
@@ -312,9 +338,9 @@ st.markdown(
             </svg>
         </div>
         <div class="hero-text">
-            <span class="hero-tag">Iniciativa Cívica Independente - Portugal</span>
-            <h1>Observatório Técnico da Segurança Privada</h1>
-            <p>Auditoria salarial baseada nas tabelas oficiais do BTE, recolha organizada de provas e coordenação coletiva com privacidade absoluta.</p>
+            <span class="hero-tag">Ferramenta Independente de Literacia Laboral - Portugal</span>
+            <h1>Vigilante Informado - Apoio Técnico & CCT</h1>
+            <p>Simulador salarial baseado nas tabelas oficiais do BTE, organização de provas e coordenação coletiva com privacidade absoluta.</p>
         </div>
     </div>
     """,
@@ -340,19 +366,19 @@ if supabase is None:
 
 aba1, aba2, aba3, aba4, aba5 = st.tabs(
     [
-        "1. Auditor Salarial & Formação",
+        "1. Simulador Salarial & Formação",
         "2. Documentar Ocorrências",
-        "3. Radar do Setor",
+        "3. Indicadores do Setor",
         "4. Ação Coletiva (Grupos)",
-        "5. Guia do Vigilante, Sindicatos & Legal",
+        "5. Guia do Vigilante, Horários & Legal",
     ]
 )
 
 # ==============================================================================
-# ABA 1: AUDITOR DE RECIBOS, PERÍODOS LONGOS & FORMAÇÃO
+# ABA 1: SIMULADOR DE RECIBOS, PERÍODOS LONGOS & FORMAÇÃO
 # ==============================================================================
 with aba1:
-    st.subheader("Auditoria Matemática de Vencimentos (Tabelas Oficiais BTE)")
+    st.subheader("Conferência Matemática de Vencimentos (Tabelas Oficiais BTE)")
     st.write(
         "Seleciona a empresa, a tua categoria profissional e o período trabalhado. Os valores base e "
         "subsídios correspondem às tabelas oficiais publicadas no Boletim do Trabalho e Emprego."
@@ -380,7 +406,7 @@ with aba1:
     col_p1, col_p2 = st.columns(2)
     with col_p1:
         num_meses = st.number_input(
-            "Número de meses a auditar (1 para recibo mensal ou vários meses acumulados)",
+            "Número de meses a conferir (1 para recibo mensal ou vários meses acumulados)",
             min_value=1,
             max_value=36,
             value=1,
@@ -473,7 +499,7 @@ with aba1:
             step=5.0,
         )
 
-    st.markdown("#### Passo C: Validação Técnica Anti-Fraude (Opcional para Entrar no Radar Público)")
+    st.markdown("#### Passo C: Validação Técnica Anti-Fraude (Opcional para Entrar nos Indicadores Públicos)")
     st.caption(
         "Para contabilizar o teu caso nas estatísticas públicas e nos grupos de ação coletiva, anexa um recibo "
         "de vencimento original (PDF) desse período. O ficheiro é validado em memória RAM e apagado imediatamente."
@@ -481,7 +507,7 @@ with aba1:
     ficheiro_pdf = st.file_uploader("Carregar Recibo de Vencimento de Referência (PDF original)", type=["pdf"])
     tipo_principal = st.selectbox("Principal irregularidade apurada", TIPOS_INCUMPRIMENTO)
 
-    if st.button("Calcular Auditoria e Gerar Dossiê PDF", type="primary"):
+    if st.button("Calcular Valores e Gerar Dossiê PDF", type="primary"):
         resultado = calcular_auditoria_periodo(
             empresa=empresa_sel,
             ano=ano_sel,
@@ -559,7 +585,7 @@ with aba1:
                 st.error(f"Validação falhou: {val['motivo']} O dossiê será gerado apenas como simulação local.")
         else:
             st.warning(
-                "Cálculo efetuado em modo de simulação manual. Para entrar no Radar Público e nos grupos "
+                "Cálculo efetuado em modo de simulação manual. Para entrar nos Indicadores Públicos e nos grupos "
                 "de ação coletiva, anexa um recibo original em PDF."
             )
 
@@ -575,7 +601,7 @@ with aba1:
         st.download_button(
             label="Descarregar Dossiê Técnico em PDF (Guardar no Dispositivo)",
             data=pdf_bytes,
-            file_name=f"Dossie_Auditoria_{ano_sel}.pdf",
+            file_name=f"Dossie_Apuramento_{ano_sel}.pdf",
             mime="application/pdf",
         )
 
@@ -656,12 +682,12 @@ with aba2:
 
 
 # ==============================================================================
-# ABA 3: RADAR ESTATÍSTICO DO SETOR
+# ABA 3: INDICADORES ESTATÍSTICOS DO SETOR
 # ==============================================================================
 with aba3:
-    st.subheader("Radar Público de Conformidade Laboral")
+    st.subheader("Indicadores Agregados de Conformidade Laboral")
     st.write(
-        "Indicadores agregados baseados exclusivamente em recibos auditados tecnicamente. "
+        "Dados estatísticos agregados baseados exclusivamente em recibos validados tecnicamente. "
         "Nenhum trabalhador ou posto isolado é identificado."
     )
 
@@ -669,12 +695,12 @@ with aba3:
     if not dados:
         st.info(
             "Ainda não existem registos validados suficientes para exibir estatísticas agregadas. "
-            "Assim que os primeiros recibos forem auditados na Aba 1, os indicadores surgirão aqui automaticamente."
+            "Assim que os primeiros recibos forem validados na Aba 1, os indicadores surgirão aqui automaticamente."
         )
     else:
         df = pd.DataFrame(dados)
         c_k1, c_k2, c_k3 = st.columns(3)
-        c_k1.metric("Total de Auditorias Validadas", len(df))
+        c_k1.metric("Total de Registos Validados", len(df))
         c_k2.metric("Desvio Médio Apurado", f"{df['desvio_eur'].mean():.2f} EUR")
         c_k3.metric("Total Acumulado em Falta", f"{df['desvio_eur'].sum():.2f} EUR")
 
@@ -717,7 +743,7 @@ with aba4:
         caso_encontrado = next((d for d in dados if d.get("codigo_caso") == codigo_consulta), None)
 
         if not caso_encontrado:
-            st.error("Código de caso não encontrado. Verifica se copiaste corretamente após a auditoria na Aba 1.")
+            st.error("Código de caso não encontrado. Verifica se copiaste corretamente após a validação na Aba 1.")
         else:
             emp_c = caso_encontrado["empresa"]
             dist_c = caso_encontrado["distrito"]
@@ -770,21 +796,21 @@ with aba4:
 
 
 # ==============================================================================
-# ABA 5: GUIA DO VIGILANTE, SINDICATOS, GREVES & QUADRO LEGAL
+# ABA 5: GUIA DO VIGILANTE, HORÁRIOS, SINDICATOS & QUADRO LEGAL
 # ==============================================================================
 with aba5:
-    st.subheader("Guia de Defesa Laboral do Vigilante, Sindicalismo e Quadro Legal")
+    st.subheader("Guia de Defesa Laboral do Vigilante: Horários, Direitos e Sindicalismo")
 
     st.markdown(
         """
         <div class="guide-card">
             <h3>1. Uma Nova Era na Segurança Privada: Não Estás Sozinho</h3>
             <p>Durante décadas, o maior trunfo contra os vigilantes foi o isolamento entre postos e o desconhecimento
-            técnico das regras salariais. Muitos profissionais aceitam cortes nas horas noturnas, escalas alteradas
-            de véspera ou perdas de antiguidade por acreditarem que reclamar sozinho não dá resultado.</p>
+            técnico das regras salariais e de horário. Muitos profissionais aceitam cortes nas horas noturnas, escalas
+            alteradas de véspera ou horas extras não pagas por acreditarem que reclamar sozinho não dá resultado.</p>
             <p>Esta ferramenta marca o início de uma mudança de paradigma: <strong>conhecimento jurídico acessível,
             documentação rigorosa e união inteligente</strong>. Quando cada vigilante sabe calcular o seu recibo ao
-            cêntimo e guarda provas organizadas, o equilíbrio de forças muda.</p>
+            cêntimo, percebe o seu regime de horário e guarda provas organizadas, o equilíbrio de forças muda.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -793,7 +819,134 @@ with aba5:
     st.markdown(
         """
         <div class="guide-card">
-            <h3>2. Para que servem os CCTs e quais existem atualmente?</h3>
+            <h3>2. Regimes de Horário: Turnos, Adaptabilidade e Horário Concentrado</h3>
+            <p>Muitas irregularidades no pagamento de horas extras acontecem porque as empresas misturam regras de
+            regimes diferentes. Conhece exatamente o que a lei permite e o que é proibido em cada um:</p>
+
+            <h4>A) Regime de Turnos (Artigos 220.º a 222.º do Código do Trabalho)</h4>
+            <ul>
+                <li><strong>O que é:</strong> Organização do trabalho em equipa em que os vigilantes ocupam sucessivamente
+                os mesmos postos de trabalho a um determinado ritmo (turnos fixos ou rotativos, em regime contínuo 24h
+                ou descontínuo).</li>
+                <li><strong>Precisa de acordo escrito?</strong> Não exige acordo individual se estiver previsto no
+                contrato de trabalho ou na organização normal da empresa/CCT, mas a escala tem de ser afixada ou
+                comunicada com <strong>7 dias de antecedência</strong> (Art. 217.º CT).</li>
+                <li><strong>Regras de proteção:</strong> O vigilante só pode mudar de turno após o dia de descanso
+                semanal (Art. 221.º n.º 4 CT) e tem direito obrigatório a pelo menos <strong>11 horas seguidas de
+                descanso</strong> entre dois turnos (Art. 214.º CT).</li>
+                <li><strong>Como se contam as Horas Extras neste regime:</strong> Num contrato de 40 horas semanais
+                sem adaptabilidade nem horário concentrado, qualquer hora trabalhada acima das <strong>8 horas diárias</strong>
+                ou acima das <strong>40 horas semanais</strong> (ou acima da carga horária mensal de dias úteis × 8h)
+                é <strong>trabalho suplementar (hora extra)</strong> e tem de ser paga com acréscimo (+50% diurna / +75% noturna).</li>
+            </ul>
+
+            <h4>B) Regime de Adaptabilidade (Artigos 204.º a 206.º do Código do Trabalho)</h4>
+            <ul>
+                <li><strong>O que é:</strong> Permite à empresa variar a duração do trabalho diário e semanal dentro de
+                um período de referência (por exemplo, 4 meses), compensando semanas com mais horas com outras semanas
+                de menos horas para que a <strong>média semanal seja de 40 horas</strong>.</li>
+                <li><strong>Quando se aplica e precisa de autorização escrita?</strong> Só se aplica se estiver previsto
+                no <strong>CCT aplicável</strong> (Adaptabilidade Coletiva) ou mediante <strong>acordo escrito</strong>
+                com o trabalhador (Adaptabilidade Individual - Art. 205.º CT). Se o teu contrato não tiver cláusula de
+                adaptabilidade e não assinaste acordo escrito (nem o teu CCT a impuser automaticamente), a empresa
+                <strong>não pode</strong> aplicar-te adaptabilidade.</li>
+                <li><strong>Limites máximos:</strong> Na adaptabilidade individual o limite máximo é de +2 horas/dia
+                (máximo <strong>10 horas/dia</strong>) e <strong>50 horas/semana</strong>. Por CCT pode ir até 10h ou
+                12h/dia conforme o texto do contrato coletivo.</li>
+                <li><strong>Como se contam as Horas Extras na Adaptabilidade:</strong>
+                    <br>1. Qualquer hora que ultrapasse o teto máximo diário ou semanal da adaptabilidade (ex.: acima de 10h/dia
+                    ou 50h/semana) é <strong>imediatamente hora extra</strong> paga nesse mês.
+                    <br>2. No final do período de referência (ex.: ao fim de 4 meses), somam-se todas as horas trabalhadas:
+                    se a média ultrapassar as 40h/semana, <strong>todas as horas excedentes têm de ser pagas como trabalho
+                    suplementar</strong>.</li>
+            </ul>
+
+            <h4>C) Regime de Horário Concentrado (Artigo 209.º do Código do Trabalho)</h4>
+            <ul>
+                <li><strong>O que é:</strong> Concentra o período normal de trabalho semanal em menos dias da semana
+                (por exemplo, trabalhar <strong>3 ou 4 dias seguidos a 10h ou 12h por dia</strong>, seguidos de 3 ou 4
+                dias seguidos de descanso).</li>
+                <li><strong>Quando se aplica e precisa de autorização escrita?</strong> Exige obrigatoriamente
+                <strong>acordo escrito</strong> entre o vigilante e a empresa ou previsão expressa no <strong>CCT</strong>.
+                Permite aumentar o horário normal diário até mais 4 horas (atingindo o máximo de <strong>12 horas por dia</strong>).</li>
+                <li><strong>Como se contam as Horas Extras no Horário Concentrado:</strong> Tudo o que ultrapassar o
+                limite diário concentrado acordado (ex.: acima de 12 horas no mesmo turno), tudo o que ultrapassar a
+                média das 40 horas semanais, ou qualquer turno extra marcado nos dias de descanso previstos na escala.</li>
+            </ul>
+
+            <div class="warning-highlight">
+                <strong>REGRA LEGAL FUNDAMENTAL (Incompatibilidade de Regimes - Art. 209.º, n.º 3 do Código do Trabalho):</strong><br>
+                Quando está em vigor o <strong>Horário Concentrado</strong> (por exemplo, turnos regulares de 12 horas),
+                <strong>NÃO PODE vigorar em simultâneo o Regime de Adaptabilidade</strong>. A lei proíbe expressamente a
+                acumulação dos dois regimes no mesmo trabalhador. Se fazes turnos de 12 horas em horário concentrado, a
+                empresa não pode usar "bancos de horas" ou "adaptabilidade" para evitar pagar horas extras.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        <div class="guide-card">
+            <h3>3. Cálculo da Carga Horária Mensal (Contrato 40h), Feriados, Folgas e Férias</h3>
+
+            <h4>A) Como calcular as horas normais de cada mês (Contrato de 40 horas semanais)</h4>
+            <p>Num contrato a tempo inteiro de 40 horas semanais (base de 8 horas/dia, 5 dias por semana), a carga
+            horária normal do mês calcula-se de forma simples:</p>
+            <div class="rule-highlight">
+                <strong>Fórmula Base:</strong> <code>Número de Dias Úteis do Mês × 8 Horas = Carga Horária Mensal Normal</code><br>
+                <em>Exemplo prático:</em> Num mês com 22 dias úteis (segunda a sexta), o horário normal são <strong>176 horas</strong>
+                (22 × 8h). Tudo o que trabalhaste acima dessas 176 horas (salvo adaptabilidade válida dentro do período de
+                referência) é <strong>trabalho suplementar (horas extras)</strong>.
+            </div>
+            <ul>
+                <li><strong>Os feriados contam nos dias úteis? NÃO.</strong> Os dias feriados obrigatórios (nacionais e
+                feriado municipal do concelho do posto) <strong>não contam como dias úteis a trabalhar</strong>. Se um mês
+                tem 22 dias de segunda a sexta, mas 1 desses dias é feriado, os dias úteis baixam para <strong>21 dias
+                (168 horas)</strong>.</li>
+                <li><strong>E se eu trabalhar no dia feriado?</strong> Como o feriado não entra nos dias úteis obrigatórios
+                a compensar gratuitamente, todas as horas trabalhadas em dia feriado têm de ser pagas com o
+                <strong>acréscimo legal/convencional de +100%</strong> (ou compensadas nos exatos termos previstos no CCT
+                aplicável), além de entrarem no cômputo da escala.</li>
+            </ul>
+
+            <h4>B) Quantas folgas (dias de descanso) a empresa tem de dar?</h4>
+            <ul>
+                <li><strong>2 dias de descanso por semana (Art. 232.º CT + CCT):</strong> Numa semana normal de 40 horas
+                distribuídas por 5 dias, o vigilante tem direito a <strong>1 dia de descanso semanal obrigatório</strong> e
+                <strong>1 dia de descanso semanal complementar</strong> (totalizando 2 folgas por semana, ou seja, 8 a 9
+                folgas por mês consoante o calendário).</li>
+                <li><strong>Descanso mínimo entre turnos:</strong> Pelo menos <strong>11 horas seguidas</strong> entre o
+                fim de um turno e o início do seguinte (Art. 214.º CT).</li>
+                <li><strong>Domingos de folga:</strong> Nos regimes de turnos rotativos, o dia de descanso semanal
+                obrigatório deve coincidir periodicamente com o domingo, e o trabalhador não pode trabalhar mais de
+                6 dias consecutivos sem gozar descanso semanal.</li>
+            </ul>
+
+            <h4>C) Quantos dias úteis de férias tens direito por ano?</h4>
+            <ul>
+                <li><strong>Regra Geral (Art. 238.º CT):</strong> Tens direito a <strong>22 dias úteis de férias</strong>
+                por cada ano civil, que se vencem no dia 1 de janeiro.</li>
+                <li><strong>No Ano de Admissão (Art. 239.º CT):</strong> Tens direito a <strong>2 dias úteis por cada
+                mês completo</strong> de duração do contrato, até ao máximo de <strong>20 dias úteis</strong>, que podem
+                ser gozados após 6 meses completos de trabalho.</li>
+                <li><strong>Atenção nos Turnos Rotativos (Art. 238.º, n.º 2 CT):</strong> Para contar férias, são dias
+                úteis os dias de segunda a sexta-feira (exceto feriados). <strong>Contudo</strong>, se as tuas folgas
+                semanais calham em dias de semana (por exemplo, folgas à terça e quarta-feira), esses dias de folga
+                <strong>não contam como dias de férias</strong> e são substituídos pelos dias em que irias trabalhar
+                (sábado ou domingo). Na prática, 22 dias úteis de férias significam sempre <strong>22 turnos de trabalho
+                que deixas de fazer</strong>.</li>
+            </ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        <div class="guide-card">
+            <h3>4. Para que servem os CCTs e quais existem atualmente?</h3>
             <p>O <strong>Contrato Coletivo de Trabalho (CCT)</strong> é a lei específica negociada entre as associações
             patronais (como a <strong>AES</strong> e a <strong>AESIRF</strong>) e os sindicatos do setor. Define tudo
             o que melhora o Código do Trabalho geral: tabelas salariais acima do salário mínimo, subsídio de alimentação,
@@ -815,7 +968,7 @@ with aba5:
     st.markdown(
         """
         <div class="guide-card">
-            <h3>3. A Importância de Ser Sindicalizado (Análise Objetiva e Imparcial)</h3>
+            <h3>5. A Importância de Ser Sindicalizado (Análise Objetiva e Imparcial)</h3>
             <p>Muitos vigilantes hesitam por causa da quota mensal (em média cerca de <strong>1% do salário base</strong>),
             mas ignoram o retorno financeiro e jurídico real:</p>
             <ul>
@@ -845,7 +998,7 @@ with aba5:
     st.markdown(
         """
         <div class="guide-card">
-            <h3>4. Greves na Segurança Privada: Direitos, Custos e Conquistas Reais</h3>
+            <h3>6. Greves na Segurança Privada: Direitos, Custos e Conquistas Reais</h3>
             <ul>
                 <li><strong>Quem pode aderir à greve?</strong> Ao abrigo da Constituição e do Código do Trabalho,
                 <strong>qualquer vigilante abrangido pelo pré-aviso pode fazer greve, mesmo que não seja sindicalizado</strong>
@@ -866,7 +1019,7 @@ with aba5:
     st.markdown(
         """
         <div class="guide-card">
-            <h3>5. Conselhos Jurídicos de Base (Regras de Ouro do Vigilante)</h3>
+            <h3>7. Conselhos Jurídicos de Base (Regras de Ouro do Vigilante)</h3>
             <ul>
                 <li><strong>Nunca assines nada sob pressão:</strong> Se uma chefia apresentar uma adenda contratual,
                 acordo de revogação ou mudança de posto para assinar na hora, tens o direito de pedir uma cópia para
@@ -918,7 +1071,7 @@ with aba5:
         )
     with st.expander("3. Como evitam denúncias falsas que retirem credibilidade ao site?"):
         st.write(
-            "As estatísticas públicas e os grupos coletivos aceitam apenas auditorias acompanhadas pela "
+            "As estatísticas públicas e os grupos coletivos aceitam apenas cálculos acompanhados pela "
             "leitura estrutural de um recibo original com estrutura salarial validada, bloqueando submissões "
             "duplicadas através de uma assinatura criptográfica irreversível (SHA-256)."
         )
