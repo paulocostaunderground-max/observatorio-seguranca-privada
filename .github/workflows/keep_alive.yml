@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Acordar e manter aplicacao Streamlit ativa
         run: |
-          URL="https://observatorio-seguranca-privada.streamlit.app"
+          URL="https://vigilante-informado-pt.streamlit.app"
           curl -f -s -S -L -c /tmp/cookies.txt -b /tmp/cookies.txt -A "Mozilla/5.0" "$URL/_stcore/health"
           echo ""
           google-chrome --headless --no-sandbox --disable-gpu --virtual-time-budget=5000 --dump-dom "$URL" > /dev/null 2>&1 || true
