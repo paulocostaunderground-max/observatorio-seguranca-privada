@@ -7,6 +7,7 @@ import streamlit as st
 from pypdf import PdfReader
 
 from cct_engine import (
+    CATEGORIAS_PROFISSIONAIS,
     DISTRITOS_PORTUGAL,
     EMPRESAS_SEGURANCA,
     TIPOS_INCUMPRIMENTO,
@@ -174,13 +175,6 @@ def obter_salt_segredo() -> str:
 
 
 def validar_recibo_em_memoria(ficheiro_bytes: bytes, empresa_selecionada: str) -> dict:
-    """
-    Valida a estrutura real de um recibo de vencimento português em memória RAM:
-    1. Confirma múltiplos marcadores de processamento salarial e valores monetários.
-    2. Verifica coerência com a empresa escolhida (sem bloquear caso o cabeçalho com NIPC seja uma imagem).
-    3. Extrai NIPC empresarial válido (Módulo 11) se existir em texto.
-    4. Gera assinatura criptográfica SHA-256 irreversível para impedir duplicações.
-    """
     try:
         reader = PdfReader(io.BytesIO(ficheiro_bytes))
         texto_total = ""
@@ -224,11 +218,10 @@ def validar_recibo_em_memoria(ficheiro_bytes: bytes, empresa_selecionada: str) -
                 "valido": False,
                 "motivo": (
                     "Não foi possível detetar a estrutura salarial completa no PDF. "
-                    "Certifica-te de que é o PDF digital original emitido pela empresa (e não uma fotografia digitalizada)."
+                    "Certifica-te de que é o PDF digital original emitido pela empresa."
                 ),
             }
 
-        # Verificar se o texto menciona explicitamente outra empresa concorrente diferente da selecionada
         for nome_emp, dados_emp in EMPRESAS_SEGURANCA.items():
             if nome_emp == empresa_selecionada:
                 continue
@@ -239,7 +232,6 @@ def validar_recibo_em_memoria(ficheiro_bytes: bytes, empresa_selecionada: str) -
                         "motivo": f"O recibo parece pertencer a outra entidade ({nome_emp}) diferente da selecionada.",
                     }
 
-        # Procurar qualquer NIPC empresarial válido (9 dígitos começados por 5-9) no texto
         nipc_detetado = "VALIDADO-ERP"
         candidatos_9d = re.findall(r"\b[5-9]\d{8}\b", re.sub(r"[^\d\s]", " ", texto_total))
         for cand in candidatos_9d:
@@ -322,7 +314,7 @@ st.markdown(
         <div class="hero-text">
             <span class="hero-tag">Iniciativa Cívica Independente - Portugal</span>
             <h1>Observatório Técnico da Segurança Privada</h1>
-            <p>Auditoria salarial baseada nos CCTs em vigor, recolha organizada de provas e coordenação coletiva com privacidade absoluta.</p>
+            <p>Auditoria salarial baseada nas tabelas oficiais do BTE, recolha organizada de provas e coordenação coletiva com privacidade absoluta.</p>
         </div>
     </div>
     """,
@@ -360,10 +352,10 @@ aba1, aba2, aba3, aba4, aba5 = st.tabs(
 # ABA 1: AUDITOR DE RECIBOS, PERÍODOS LONGOS & FORMAÇÃO
 # ==============================================================================
 with aba1:
-    st.subheader("Auditoria Matemática de Vencimentos, Períodos Acumulados e Formação")
+    st.subheader("Auditoria Matemática de Vencimentos (Tabelas Oficiais BTE)")
     st.write(
-        "Seleciona a empresa e o período trabalhado. O sistema sugere os Contratos Coletivos de Trabalho (CCT) "
-        "mais frequentes nessa empresa, permitindo-te confirmar o CCT exato aplicado ao teu contrato."
+        "Seleciona a empresa, a tua categoria profissional e o período trabalhado. Os valores base e "
+        "subsídios correspondem às tabelas oficiais publicadas no Boletim do Trabalho e Emprego."
     )
 
     col1, col2 = st.columns([2, 1])
@@ -374,14 +366,16 @@ with aba1:
 
     lista_ccts_ordenada = obter_sugestoes_cct(empresa_sel)
 
-    col_c1, col_c2 = st.columns([2, 1])
+    col_c1, col_c2, col_c3 = st.columns([2, 2, 1])
     with col_c1:
         cct_sel = st.selectbox(
-            "CCT Aplicável (O primeiro da lista é o mais frequente nesta empresa)",
+            "CCT Aplicável (O 1.º é o mais frequente nesta empresa)",
             lista_ccts_ordenada,
         )
     with col_c2:
-        ano_sel = st.selectbox("Ano de Referência da Tabela", [2026, 2025, 2024, 2023])
+        categoria_sel = st.selectbox("Categoria Profissional", CATEGORIAS_PROFISSIONAIS)
+    with col_c3:
+        ano_sel = st.selectbox("Ano da Tabela", [2026, 2025, 2024, 2023])
 
     col_p1, col_p2 = st.columns(2)
     with col_p1:
@@ -398,13 +392,13 @@ with aba1:
             value=f"Período de {num_meses} mês(es) - {ano_sel}",
         )
 
-    enq = obter_enquadramento(empresa_sel, ano_sel, cct_sel)
+    enq = obter_enquadramento(empresa_sel, ano_sel, cct_sel, categoria_sel)
     st.markdown(
         f"""
         <div class="info-card">
-            <strong>Enquadramento Selecionado:</strong> {enq['cct']} (Tabela {enq['ano_aplicado']}) |
-            <strong>Base Mensal:</strong> {enq['base']:.2f} EUR |
-            <strong>Valor Hora Base:</strong> {enq['valor_hora']:.4f} EUR/h |
+            <strong>Tabela Oficial BTE ({enq['ano_aplicado']}):</strong> {enq['cct']} |
+            <strong>Vencimento Base:</strong> {enq['base']:.2f} EUR |
+            <strong>Valor Hora Base:</strong> {enq['valor_hora']:.4f} EUR/h ({enq['valor_hora']:.2f} EUR) |
             <strong>Subsídio Alimentação:</strong> {enq['sub_alim_dia']:.2f} EUR/dia
         </div>
         """,
@@ -412,32 +406,63 @@ with aba1:
     )
 
     st.markdown("#### Passo A: Horas e Dias Efetivamente Trabalhados no Período")
-    c_h1, c_h2, c_h3, c_h4, c_h5 = st.columns(5)
+    c_h1, c_h2, c_h3 = st.columns(3)
     with c_h1:
         dias_trab = st.number_input("Dias trabalhados (total)", min_value=0, max_value=1100, value=22 * num_meses)
+        h_noturnas = st.number_input("Horas Noturnas 21h-06h (+25%)", min_value=0.0, max_value=9000.0, value=0.0, step=1.0)
     with c_h2:
-        h_noturnas = st.number_input("Horas Noturnas (21h-06h)", min_value=0.0, max_value=9000.0, value=0.0, step=1.0)
-    with c_h3:
-        h_feriado = st.number_input("Horas em Dia Feriado", min_value=0.0, max_value=3000.0, value=0.0, step=1.0)
-    with c_h4:
-        h_extras = st.number_input("Horas Extras (Suplementar)", min_value=0.0, max_value=5000.0, value=0.0, step=1.0)
-    with c_h5:
-        h_formacao = st.number_input(
-            "Horas Formação em falta/não pagas",
+        h_feriado_norm = st.number_input(
+            "Horas Normais em Feriado (+100% acréscimo)",
             min_value=0.0,
-            max_value=500.0,
+            max_value=3000.0,
             value=0.0,
             step=1.0,
-            help="Art. 131.º Código do Trabalho: direito a 40 horas anuais de formação contínua certificada.",
+            help="Horas de escala normal trabalhadas em dia feriado (acresce +100% sobre o valor hora).",
         )
+        h_extras_feriado = st.number_input(
+            "Horas Extras em Feriado / Descanso (200% total)",
+            min_value=0.0,
+            max_value=3000.0,
+            value=0.0,
+            step=1.0,
+            help="Trabalho suplementar prestado em dia feriado ou dia de descanso semanal (pago a dobrar).",
+        )
+    with c_h3:
+        h_extras_diurnas = st.number_input(
+            "Horas Extras Diurnas (+50% = 1,50x VH)",
+            min_value=0.0,
+            max_value=5000.0,
+            value=0.0,
+            step=1.0,
+        )
+        h_extras_noturnas = st.number_input(
+            "Horas Extras Noturnas (+75% = 1,75x VH)",
+            min_value=0.0,
+            max_value=5000.0,
+            value=0.0,
+            step=1.0,
+        )
+
+    h_formacao = st.number_input(
+        "Horas de Formação em falta ou não pagas (Art. 131.º CT - direito a 40h/ano)",
+        min_value=0.0,
+        max_value=500.0,
+        value=0.0,
+        step=1.0,
+    )
 
     st.markdown("#### Passo B: Valores Totais Pagos nos Recibos do Período (EUR)")
     c_p1, c_p2, c_p3 = st.columns(3)
     with c_p1:
-        pago_base = st.number_input("Base Pago Total (EUR)", min_value=0.0, value=round(float(enq["base"]) * num_meses, 2), step=10.0)
+        pago_base = st.number_input(
+            "Base Pago Total (EUR)",
+            min_value=0.0,
+            value=round(float(enq["base"]) * num_meses, 2),
+            step=10.0,
+        )
         pago_noturno = st.number_input("Noturno Pago Total (EUR)", min_value=0.0, value=0.0, step=5.0)
     with c_p2:
-        pago_feriado = st.number_input("Feriado Pago Total (EUR)", min_value=0.0, value=0.0, step=5.0)
+        pago_feriado = st.number_input("Feriado / Descanso Pago Total (EUR)", min_value=0.0, value=0.0, step=5.0)
         pago_extras = st.number_input("Horas Extras Pago Total (EUR)", min_value=0.0, value=0.0, step=5.0)
     with c_p3:
         pago_formacao = st.number_input("Formação Paga Total (EUR)", min_value=0.0, value=0.0, step=5.0)
@@ -461,10 +486,13 @@ with aba1:
             empresa=empresa_sel,
             ano=ano_sel,
             cct_escolhido=cct_sel,
+            categoria=categoria_sel,
             num_meses=num_meses,
             horas_noturnas_totais=h_noturnas,
-            horas_feriado_totais=h_feriado,
-            horas_extras_totais=h_extras,
+            horas_feriado_normais=h_feriado_norm,
+            horas_extras_diurnas=h_extras_diurnas,
+            horas_extras_noturnas=h_extras_noturnas,
+            horas_extras_feriado_descanso=h_extras_feriado,
             horas_formacao_nao_pagas=h_formacao,
             dias_trabalhados_totais=dias_trab,
             base_pago_total=pago_base,
