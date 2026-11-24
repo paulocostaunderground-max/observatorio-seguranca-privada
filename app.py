@@ -13,6 +13,7 @@ from cct_engine import (
     calcular_auditoria_periodo,
     obter_enquadramento,
     obter_sugestoes_cct,
+    validar_nipc_portugues,
 )
 from pdf_generator import gerar_pdf_auditoria, gerar_pdf_ocorrencia
 
@@ -172,48 +173,86 @@ def obter_salt_segredo() -> str:
         return "SALT_LOCAL_DESENVOLVIMENTO_2026"
 
 
-def validar_recibo_em_memoria(ficheiro_bytes: bytes, nipc_esperado: str) -> dict:
+def validar_recibo_em_memoria(ficheiro_bytes: bytes, empresa_selecionada: str) -> dict:
+    """
+    Valida a estrutura real de um recibo de vencimento português em memória RAM:
+    1. Confirma múltiplos marcadores de processamento salarial e valores monetários.
+    2. Verifica coerência com a empresa escolhida (sem bloquear caso o cabeçalho com NIPC seja uma imagem).
+    3. Extrai NIPC empresarial válido (Módulo 11) se existir em texto.
+    4. Gera assinatura criptográfica SHA-256 irreversível para impedir duplicações.
+    """
     try:
         reader = PdfReader(io.BytesIO(ficheiro_bytes))
         texto_total = ""
         for page in reader.pages[:2]:
-            texto_total += page.extract_text() or ""
+            texto_total += (page.extract_text() or "") + "\n"
 
         texto_lower = texto_total.lower()
+
         marcadores_recibo = [
             "vencimento",
-            "remuneracao",
             "remuneração",
-            "seguranca social",
+            "remuneracao",
             "segurança social",
+            "seguranca social",
             "irs",
-            "recibo",
-            "liquido",
             "líquido",
+            "liquido",
+            "ilíquido",
+            "iliquido",
+            "subsídio",
+            "subsidio",
+            "alimentação",
+            "alimentacao",
+            "abonos",
+            "descontos",
+            "categoria",
+            "vigilante",
+            "iban",
+            "nib",
+            "niss",
+            "período",
+            "periodo",
+            "11%",
+            "11,00%",
         ]
         encontrados = sum(1 for m in marcadores_recibo if m in texto_lower)
+        valores_monetarios = re.findall(r"\b\d{1,5}[.,]\d{2}\b", texto_total)
 
-        nipc_limpo = re.sub(r"\D", "", nipc_esperado)
-        texto_numeros = re.sub(r"\D", "", texto_total)
-        nipc_bate_certo = (nipc_limpo == "000000000") or (nipc_limpo in texto_numeros)
-
-        if encontrados < 2:
+        if encontrados < 3 or len(valores_monetarios) < 2:
             return {
                 "valido": False,
-                "motivo": "O ficheiro não apresenta a estrutura textual de um recibo de vencimento processado.",
+                "motivo": (
+                    "Não foi possível detetar a estrutura salarial completa no PDF. "
+                    "Certifica-te de que é o PDF digital original emitido pela empresa (e não uma fotografia digitalizada)."
+                ),
             }
 
-        if not nipc_bate_certo:
-            return {
-                "valido": False,
-                "motivo": "O NIPC detetado no PDF não corresponde à empresa selecionada.",
-            }
+        # Verificar se o texto menciona explicitamente outra empresa concorrente diferente da selecionada
+        for nome_emp, dados_emp in EMPRESAS_SEGURANCA.items():
+            if nome_emp == empresa_selecionada:
+                continue
+            for kw in dados_emp.get("keywords", []):
+                if kw and len(kw) >= 4 and re.search(rf"\b{re.escape(kw)}\b", texto_lower):
+                    return {
+                        "valido": False,
+                        "motivo": f"O recibo parece pertencer a outra entidade ({nome_emp}) diferente da selecionada.",
+                    }
+
+        # Procurar qualquer NIPC empresarial válido (9 dígitos começados por 5-9) no texto
+        nipc_detetado = "VALIDADO-ERP"
+        candidatos_9d = re.findall(r"\b[5-9]\d{8}\b", re.sub(r"[^\d\s]", " ", texto_total))
+        for cand in candidatos_9d:
+            if validar_nipc_portugues(cand):
+                nipc_detetado = cand
+                break
 
         salt = obter_salt_segredo()
-        assinatura_bruta = f"{nipc_limpo}:{texto_total[:600]}:{salt}".encode("utf-8", errors="ignore")
+        texto_normalizado = re.sub(r"\s+", " ", texto_total.strip())[:1000]
+        assinatura_bruta = f"{empresa_selecionada}:{texto_normalizado}:{salt}".encode("utf-8", errors="ignore")
         hash_unico = hashlib.sha256(assinatura_bruta).hexdigest()
 
-        return {"valido": True, "hash_unico": hash_unico}
+        return {"valido": True, "hash_unico": hash_unico, "nipc_detetado": nipc_detetado}
     except Exception:
         return {
             "valido": False,
@@ -333,7 +372,7 @@ with aba1:
     with col2:
         distrito_sel = st.selectbox("Distrito do Posto", DISTRITOS_PORTUGAL)
 
-    nipc_emp, lista_ccts_ordenada = obter_sugestoes_cct(empresa_sel)
+    lista_ccts_ordenada = obter_sugestoes_cct(empresa_sel)
 
     col_c1, col_c2 = st.columns([2, 1])
     with col_c1:
@@ -364,7 +403,6 @@ with aba1:
         f"""
         <div class="info-card">
             <strong>Enquadramento Selecionado:</strong> {enq['cct']} (Tabela {enq['ano_aplicado']}) |
-            <strong>NIPC:</strong> {enq['nipc']} |
             <strong>Base Mensal:</strong> {enq['base']:.2f} EUR |
             <strong>Valor Hora Base:</strong> {enq['valor_hora']:.4f} EUR/h |
             <strong>Subsídio Alimentação:</strong> {enq['sub_alim_dia']:.2f} EUR/dia
@@ -456,18 +494,21 @@ with aba1:
 
         if ficheiro_pdf is not None:
             bytes_pdf = ficheiro_pdf.read()
-            val = validar_recibo_em_memoria(bytes_pdf, enq["nipc"])
+            val = validar_recibo_em_memoria(bytes_pdf, empresa_sel)
             del bytes_pdf
 
             if val["valido"]:
                 validado = True
                 codigo_caso = gerar_codigo_caso(val["hash_unico"])
+                if val.get("nipc_detetado") and val["nipc_detetado"] != "VALIDADO-ERP":
+                    resultado["regras"]["nipc"] = val["nipc_detetado"]
+
                 if resultado["desvio_total"] >= 5.0:
                     reg = {
                         "hash_unico": val["hash_unico"],
                         "codigo_caso": codigo_caso,
                         "empresa": empresa_sel,
-                        "nipc": enq["nipc"],
+                        "nipc": val.get("nipc_detetado", "VALIDADO-ERP"),
                         "distrito": distrito_sel,
                         "tipo_infracao": tipo_principal,
                         "desvio_eur": resultado["desvio_total"],
@@ -482,7 +523,10 @@ with aba1:
                     else:
                         st.warning(msg)
                 else:
-                    st.info("Recibo validado, mas como não há desvio superior a 5 EUR, não foi registado incumprimento.")
+                    st.info(
+                        f"Recibo oficial validado com sucesso (Código: **{codigo_caso}**), mas como não existe "
+                        "desvio superior a 5 EUR nos valores inseridos, não foi registado incumprimento."
+                    )
             else:
                 st.error(f"Validação falhou: {val['motivo']} O dossiê será gerado apenas como simulação local.")
         else:
@@ -847,8 +891,8 @@ with aba5:
     with st.expander("3. Como evitam denúncias falsas que retirem credibilidade ao site?"):
         st.write(
             "As estatísticas públicas e os grupos coletivos aceitam apenas auditorias acompanhadas pela "
-            "leitura estrutural de um recibo original com NIPC válido, bloqueando submissões duplicadas "
-            "através de uma assinatura criptográfica irreversível (SHA-256)."
+            "leitura estrutural de um recibo original com estrutura salarial validada, bloqueando submissões "
+            "duplicadas através de uma assinatura criptográfica irreversível (SHA-256)."
         )
     with st.expander("4. Como funciona o grupo quando atingimos 10 casos na mesma empresa?"):
         st.write(
