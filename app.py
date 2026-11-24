@@ -10,73 +10,137 @@ from cct_engine import (
     DISTRITOS_PORTUGAL,
     EMPRESAS_SEGURANCA,
     TIPOS_INCUMPRIMENTO,
-    calcular_auditoria_mensal,
+    calcular_auditoria_periodo,
     obter_enquadramento,
+    obter_sugestoes_cct,
 )
 from pdf_generator import gerar_pdf_auditoria, gerar_pdf_ocorrencia
 
-# Limiar minimo de casos unicos validados para desbloquear canal de acao coletiva
 LIMIAR_GRUPO_COLETIVO = 10
 
 st.set_page_config(
-    page_title="Observatorio da Seguranca Privada PT",
+    page_title="Observatório da Segurança Privada PT",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
-# CSS Institucional (Trust-First UI + Mobile First)
+# CSS Institucional Responsivo (Desktop + Mobile)
 st.markdown(
     """
     <style>
     .stApp {
         background-color: #F8FAFC;
-        color: #1E293B;
+        color: #0F172A;
     }
-    .header-box {
-        background-color: #0F172A;
+    .main .block-container {
+        max-width: 1180px;
+        padding-top: 1.5rem;
+        padding-bottom: 3rem;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+    .hero-banner {
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
         color: #FFFFFF;
-        padding: 1.5rem;
-        border-radius: 10px;
-        margin-bottom: 1.2rem;
-        border-left: 6px solid #059669;
+        padding: 1.75rem 2rem;
+        border-radius: 14px;
+        margin-bottom: 1.25rem;
+        border-bottom: 4px solid #10B981;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
     }
-    .header-box h1 {
+    .hero-logo {
+        flex-shrink: 0;
+    }
+    .hero-text h1 {
         margin: 0;
-        font-size: 1.55rem;
-        font-weight: 700;
+        font-size: 1.65rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
         color: #FFFFFF;
+        line-height: 1.2;
     }
-    .header-box p {
-        margin: 0.4rem 0 0 0;
-        font-size: 0.95rem;
+    .hero-text p {
+        margin: 0.45rem 0 0 0;
+        font-size: 0.98rem;
         color: #CBD5E1;
+        line-height: 1.45;
     }
-    .trust-badge {
+    .hero-tag {
+        display: inline-block;
+        background-color: rgba(16, 185, 129, 0.18);
+        color: #34D399;
+        border: 1px solid rgba(52, 211, 153, 0.35);
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        margin-bottom: 0.5rem;
+    }
+    .trust-strip {
         background-color: #ECFDF5;
         border: 1px solid #A7F3D0;
         color: #065F46;
-        padding: 0.65rem 1rem;
-        border-radius: 8px;
-        font-size: 0.88rem;
-        margin-bottom: 1rem;
+        padding: 0.85rem 1.15rem;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        margin-bottom: 1.25rem;
+        line-height: 1.45;
     }
-    .legal-box {
-        background-color: #F1F5F9;
-        border-left: 4px solid #334155;
-        padding: 1rem;
-        border-radius: 6px;
-        font-size: 0.88rem;
+    .info-card {
+        background-color: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-left: 4px solid #0F172A;
+        padding: 1.1rem 1.25rem;
+        border-radius: 10px;
+        font-size: 0.92rem;
         color: #334155;
-        margin-bottom: 0.8rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .guide-card {
+        background-color: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-top: 4px solid #059669;
+        padding: 1.35rem 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.2rem;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+    }
+    .guide-card h3 {
+        color: #0F172A;
+        margin-top: 0;
+        font-size: 1.15rem;
     }
     .alert-amber {
         background-color: #FFFBEB;
         border: 1px solid #FDE68A;
         color: #92400E;
-        padding: 0.85rem;
-        border-radius: 8px;
-        font-size: 0.9rem;
+        padding: 1rem;
+        border-radius: 10px;
+        font-size: 0.92rem;
+        line-height: 1.5;
+    }
+    @media (max-width: 768px) {
+        .main .block-container {
+            padding-left: 0.85rem;
+            padding-right: 0.85rem;
+            padding-top: 0.85rem;
+        }
+        .hero-banner {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 1.25rem;
+            gap: 0.9rem;
+        }
+        .hero-text h1 {
+            font-size: 1.32rem;
+        }
     }
     </style>
     """,
@@ -84,7 +148,6 @@ st.markdown(
 )
 
 
-# Ligacao opcional ao Supabase (UE) via st.secrets
 @st.cache_resource
 def iniciar_supabase():
     try:
@@ -110,10 +173,6 @@ def obter_salt_segredo() -> str:
 
 
 def validar_recibo_em_memoria(ficheiro_bytes: bytes, nipc_esperado: str) -> dict:
-    """
-    Le o PDF apenas em memoria RAM, verifica estrutura real de recibo de vencimento,
-    gera hash criptografico irreversivel para evitar duplicados e descarta o ficheiro.
-    """
     try:
         reader = PdfReader(io.BytesIO(ficheiro_bytes))
         texto_total = ""
@@ -141,16 +200,15 @@ def validar_recibo_em_memoria(ficheiro_bytes: bytes, nipc_esperado: str) -> dict
         if encontrados < 2:
             return {
                 "valido": False,
-                "motivo": "O ficheiro nao apresenta a estrutura textual de um recibo de vencimento processado.",
+                "motivo": "O ficheiro não apresenta a estrutura textual de um recibo de vencimento processado.",
             }
 
         if not nipc_bate_certo:
             return {
                 "valido": False,
-                "motivo": "O NIPC detetado no PDF nao corresponde a empresa selecionada.",
+                "motivo": "O NIPC detetado no PDF não corresponde à empresa selecionada.",
             }
 
-        # Gera assinatura unica do documento sem guardar dados pessoais
         salt = obter_salt_segredo()
         assinatura_bruta = f"{nipc_limpo}:{texto_total[:600]}:{salt}".encode("utf-8", errors="ignore")
         hash_unico = hashlib.sha256(assinatura_bruta).hexdigest()
@@ -159,7 +217,7 @@ def validar_recibo_em_memoria(ficheiro_bytes: bytes, nipc_esperado: str) -> dict
     except Exception:
         return {
             "valido": False,
-            "motivo": "Nao foi possivel ler o PDF. Verifica se o ficheiro nao esta protegido por palavra-passe.",
+            "motivo": "Não foi possível ler o PDF. Verifica se o ficheiro não está protegido por palavra-passe.",
         }
 
 
@@ -168,10 +226,6 @@ def gerar_codigo_caso(hash_unico: str) -> str:
 
 
 def gerar_links_sala_autonoma(empresa: str, distrito: str, tipo_infracao: str) -> dict:
-    """
-    Gera deterministicamente links para salas encriptadas em RAM (Zero-Admin / Zero-Custody).
-    Nenhuma sala e criada ou administrada pelo criador do site.
-    """
     salt = obter_salt_segredo()
     chave_grupo = f"{empresa}|{distrito}|{tipo_infracao}|{salt}".encode("utf-8")
     sala_id = hashlib.sha256(chave_grupo).hexdigest()[:20]
@@ -191,17 +245,17 @@ def guardar_registo_anonimo(registo: dict) -> tuple[bool, str]:
                 .execute()
             )
             if existente.data:
-                return False, "Este recibo ja foi auditado e registado anteriormente no sistema."
+                return False, "Este recibo já foi auditado e registado anteriormente no sistema."
             supabase.table("denuncias_validadas").insert(registo).execute()
-            return True, "Registo tecnico validado e guardado anonimamente com sucesso."
+            return True, "Registo técnico validado e guardado anonimamente com sucesso."
         except Exception as e:
-            return False, f"Erro de ligacao a base de dados: {str(e)}"
+            return False, f"Erro de ligação à base de dados: {str(e)}"
     else:
         for r in st.session_state["registos_locais"]:
             if r["hash_unico"] == registo["hash_unico"]:
-                return False, "Este recibo ja foi registado nesta sessao."
+                return False, "Este recibo já foi registado nesta sessão."
         st.session_state["registos_locais"].append(registo)
-        return True, "Registo guardado em modo de demonstracao local (liga o Supabase para persistencia permanente)."
+        return True, "Registo guardado em modo de demonstração local."
 
 
 def carregar_todos_registos() -> list:
@@ -214,12 +268,23 @@ def carregar_todos_registos() -> list:
     return st.session_state["registos_locais"]
 
 
-# CABECALHO PRINCIPAL
+# CABEÇALHO INSTITUCIONAL COM LOGÓTIPO VETORIAL PRÓPRIO (SVG)
 st.markdown(
     """
-    <div class="header-box">
-        <h1>🛡️ Observatorio Tecnico da Seguranca Privada (Portugal)</h1>
-        <p>Auditoria salarial baseada no CCT, documentacao de provas e coordenacao coletiva com privacidade total.</p>
+    <div class="hero-banner">
+        <div class="hero-logo">
+            <svg width="68" height="68" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M40 6L12 18V38C12 56.5 24 71.2 40 75C56 71.2 68 56.5 68 38V18L40 6Z" fill="#0F172A" stroke="#10B981" stroke-width="4"/>
+                <path d="M40 14L20 22.5V38C20 51.8 28.5 63.1 40 66.5C51.5 63.1 60 51.8 60 38V22.5L40 14Z" fill="#1E293B"/>
+                <path d="M29 40L36.5 47.5L52 31" stroke="#10B981" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="40" cy="19" r="2.5" fill="#F59E0B"/>
+            </svg>
+        </div>
+        <div class="hero-text">
+            <span class="hero-tag">Iniciativa Cívica Independente - Portugal</span>
+            <h1>Observatório Técnico da Segurança Privada</h1>
+            <p>Auditoria salarial baseada nos CCTs em vigor, recolha organizada de provas e coordenação coletiva com privacidade absoluta.</p>
+        </div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -227,10 +292,10 @@ st.markdown(
 
 st.markdown(
     """
-    <div class="trust-badge">
-        <strong>Arquitetura Custodia Zero (RGPD):</strong> Nao pedimos nome, NIF, email nem telefone.
-        Os recibos carregados sao lidos apenas em memoria RAM e destruidos no mesmo segundo.
-        O dossie PDF fica guardado exclusivamente no teu telemovel.
+    <div class="trust-strip">
+        <strong>Proteção Custódia Zero (RGPD):</strong> Não pedimos nome, NIF, email nem telefone.
+        Os recibos carregados são analisados apenas em memória RAM e destruídos no mesmo segundo.
+        Os relatórios em PDF são descarregados exclusivamente para o teu dispositivo.
     </div>
     """,
     unsafe_allow_html=True,
@@ -238,112 +303,138 @@ st.markdown(
 
 if supabase is None:
     st.info(
-        "Modo de demonstracao ativo: os dados ficam apenas na memoria da sessao atual ate configurares "
-        "as chaves SUPABASE_URL e SUPABASE_KEY nos Secrets do Streamlit."
+        "Modo de demonstração local ativo: configura as chaves SUPABASE_URL e SUPABASE_KEY nos Secrets do Streamlit "
+        "para gravação permanente."
     )
 
 aba1, aba2, aba3, aba4, aba5 = st.tabs(
     [
-        "1. Auditor de Recibos & CCT",
-        "2. Documentar Ocorrencias",
+        "1. Auditor Salarial & Formação",
+        "2. Documentar Ocorrências",
         "3. Radar do Setor",
-        "4. Acao Coletiva (Grupos)",
-        "5. FAQ & Protecao Legal",
+        "4. Ação Coletiva (Grupos)",
+        "5. Guia do Vigilante, Sindicatos & Legal",
     ]
 )
 
 # ==============================================================================
-# ABA 1: AUDITOR DE RECIBOS & CCT
+# ABA 1: AUDITOR DE RECIBOS, PERÍODOS LONGOS & FORMAÇÃO
 # ==============================================================================
 with aba1:
-    st.subheader("Auditoria Matematica de Vencimento e Escala")
+    st.subheader("Auditoria Matemática de Vencimentos, Períodos Acumulados e Formação")
     st.write(
-        "Seleciona a empresa e o periodo trabalhado. O sistema identifica automaticamente o "
-        "Contrato Coletivo de Trabalho (CCT) aplicavel nesse periodo."
+        "Seleciona a empresa e o período trabalhado. O sistema sugere os Contratos Coletivos de Trabalho (CCT) "
+        "mais frequentes nessa empresa, permitindo-te confirmar o CCT exato aplicado ao teu contrato."
     )
 
-    col1, col2, col3 = st.columns([2, 1, 1])
+    col1, col2 = st.columns([2, 1])
     with col1:
         empresa_sel = st.selectbox("Entidade Empregadora", list(EMPRESAS_SEGURANCA.keys()))
     with col2:
         distrito_sel = st.selectbox("Distrito do Posto", DISTRITOS_PORTUGAL)
-    with col3:
-        ano_sel = st.selectbox("Ano do Recibo", [2026, 2025, 2024, 2023])
 
-    mes_sel = st.selectbox(
-        "Mes do Recibo",
-        [
-            "Janeiro", "Fevereiro", "Marco", "Abril", "Maio", "Junho",
-            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-        ],
-    )
+    nipc_emp, lista_ccts_ordenada = obter_sugestoes_cct(empresa_sel)
 
-    enq = obter_enquadramento(empresa_sel, ano_sel)
+    col_c1, col_c2 = st.columns([2, 1])
+    with col_c1:
+        cct_sel = st.selectbox(
+            "CCT Aplicável (O primeiro da lista é o mais frequente nesta empresa)",
+            lista_ccts_ordenada,
+        )
+    with col_c2:
+        ano_sel = st.selectbox("Ano de Referência da Tabela", [2026, 2025, 2024, 2023])
+
+    col_p1, col_p2 = st.columns(2)
+    with col_p1:
+        num_meses = st.number_input(
+            "Número de meses a auditar (1 para recibo mensal ou vários meses acumulados)",
+            min_value=1,
+            max_value=36,
+            value=1,
+            step=1,
+        )
+    with col_p2:
+        periodo_desc = st.text_input(
+            "Identificação do Período (ex.: Outubro/2026 ou Jan/2026 a Out/2026)",
+            value=f"Período de {num_meses} mês(es) - {ano_sel}",
+        )
+
+    enq = obter_enquadramento(empresa_sel, ano_sel, cct_sel)
     st.markdown(
         f"""
-        <div class="legal-box">
-            <strong>Enquadramento Automatico Detetado:</strong> {enq['cct']} (Tabela {enq['ano_aplicado']}) |
+        <div class="info-card">
+            <strong>Enquadramento Selecionado:</strong> {enq['cct']} (Tabela {enq['ano_aplicado']}) |
             <strong>NIPC:</strong> {enq['nipc']} |
             <strong>Base Mensal:</strong> {enq['base']:.2f} EUR |
             <strong>Valor Hora Base:</strong> {enq['valor_hora']:.4f} EUR/h |
-            <strong>Sub. Alimentacao:</strong> {enq['sub_alim_dia']:.2f} EUR/dia
+            <strong>Subsídio Alimentação:</strong> {enq['sub_alim_dia']:.2f} EUR/dia
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.markdown("#### Passo A: Horas Efetivamente Trabalhadas na Tua Escala")
-    c_h1, c_h2, c_h3, c_h4 = st.columns(4)
+    st.markdown("#### Passo A: Horas e Dias Efetivamente Trabalhados no Período")
+    c_h1, c_h2, c_h3, c_h4, c_h5 = st.columns(5)
     with c_h1:
-        dias_trab = st.number_input("Dias trabalhados no mes", min_value=0, max_value=31, value=22)
+        dias_trab = st.number_input("Dias trabalhados (total)", min_value=0, max_value=1100, value=22 * num_meses)
     with c_h2:
-        h_noturnas = st.number_input("Horas Noturnas (21h-06h)", min_value=0.0, max_value=250.0, value=0.0, step=0.5)
+        h_noturnas = st.number_input("Horas Noturnas (21h-06h)", min_value=0.0, max_value=9000.0, value=0.0, step=1.0)
     with c_h3:
-        h_feriado = st.number_input("Horas em Dia Feriado", min_value=0.0, max_value=100.0, value=0.0, step=0.5)
+        h_feriado = st.number_input("Horas em Dia Feriado", min_value=0.0, max_value=3000.0, value=0.0, step=1.0)
     with c_h4:
-        h_extras = st.number_input("Horas Extras (Suplementar)", min_value=0.0, max_value=150.0, value=0.0, step=0.5)
+        h_extras = st.number_input("Horas Extras (Suplementar)", min_value=0.0, max_value=5000.0, value=0.0, step=1.0)
+    with c_h5:
+        h_formacao = st.number_input(
+            "Horas Formação em falta/não pagas",
+            min_value=0.0,
+            max_value=500.0,
+            value=0.0,
+            step=1.0,
+            help="Art. 131.º Código do Trabalho: direito a 40 horas anuais de formação contínua certificada.",
+        )
 
-    st.markdown("#### Passo B: Valores Pagos no Teu Recibo de Vencimento (EUR)")
-    c_p1, c_p2, c_p3, c_p4, c_p5 = st.columns(5)
+    st.markdown("#### Passo B: Valores Totais Pagos nos Recibos do Período (EUR)")
+    c_p1, c_p2, c_p3 = st.columns(3)
     with c_p1:
-        pago_base = st.number_input("Base Pago (EUR)", min_value=0.0, value=float(enq["base"]), step=10.0)
+        pago_base = st.number_input("Base Pago Total (EUR)", min_value=0.0, value=round(float(enq["base"]) * num_meses, 2), step=10.0)
+        pago_noturno = st.number_input("Noturno Pago Total (EUR)", min_value=0.0, value=0.0, step=5.0)
     with c_p2:
-        pago_noturno = st.number_input("Noturno Pago (EUR)", min_value=0.0, value=0.0, step=5.0)
+        pago_feriado = st.number_input("Feriado Pago Total (EUR)", min_value=0.0, value=0.0, step=5.0)
+        pago_extras = st.number_input("Horas Extras Pago Total (EUR)", min_value=0.0, value=0.0, step=5.0)
     with c_p3:
-        pago_feriado = st.number_input("Feriado Pago (EUR)", min_value=0.0, value=0.0, step=5.0)
-    with c_p4:
-        pago_extras = st.number_input("Extras Pago (EUR)", min_value=0.0, value=0.0, step=5.0)
-    with c_p5:
+        pago_formacao = st.number_input("Formação Paga Total (EUR)", min_value=0.0, value=0.0, step=5.0)
         pago_alim = st.number_input(
-            "Sub. Alim. Pago (EUR)",
+            "Subsídio Alimentação Pago Total (EUR)",
             min_value=0.0,
             value=round(dias_trab * enq["sub_alim_dia"], 2),
             step=5.0,
         )
 
-    st.markdown("#### Passo C: Validacao Tecnica Anti-Fraude (Opcional para Entrar no Radar Publico)")
+    st.markdown("#### Passo C: Validação Técnica Anti-Fraude (Opcional para Entrar no Radar Público)")
     st.caption(
-        "Se quiseres que o teu desvio conte para as estatisticas publicas e desbloqueie grupos de acao "
-        "coletiva, anexa o PDF original do recibo. O ficheiro e lido apenas em memoria RAM para confirmar "
-        "que e autentico e apagado de imediato."
+        "Para contabilizar o teu caso nas estatísticas públicas e nos grupos de ação coletiva, anexa um recibo "
+        "de vencimento original (PDF) desse período. O ficheiro é validado em memória RAM e apagado imediatamente."
     )
-    ficheiro_pdf = st.file_uploader("Carregar Recibo de Vencimento (PDF original)", type=["pdf"])
+    ficheiro_pdf = st.file_uploader("Carregar Recibo de Vencimento de Referência (PDF original)", type=["pdf"])
+    tipo_principal = st.selectbox("Principal irregularidade apurada", TIPOS_INCUMPRIMENTO)
 
-    tipo_principal = st.selectbox("Principal irregularidade detetada (se aplicavel)", TIPOS_INCUMPRIMENTO[:3] + [TIPOS_INCUMPRIMENTO[8]])
-
-    if st.button("Calcular Auditoria e Gerar Dossie", type="primary"):
-        resultado = calcular_auditoria_mensal(
+    if st.button("Calcular Auditoria e Gerar Dossiê PDF", type="primary"):
+        resultado = calcular_auditoria_periodo(
             empresa=empresa_sel,
             ano=ano_sel,
-            horas_noturnas_reais=h_noturnas,
-            horas_feriado_reais=h_feriado,
-            horas_extras_reais=h_extras,
-            dias_trabalhados=dias_trab,
-            base_pago=pago_base,
-            noturno_pago=pago_noturno,
-            feriado_pago=pago_feriado,
-            extras_pago=pago_extras,
-            alim_pago=pago_alim,
+            cct_escolhido=cct_sel,
+            num_meses=num_meses,
+            horas_noturnas_totais=h_noturnas,
+            horas_feriado_totais=h_feriado,
+            horas_extras_totais=h_extras,
+            horas_formacao_nao_pagas=h_formacao,
+            dias_trabalhados_totais=dias_trab,
+            base_pago_total=pago_base,
+            noturno_pago_total=pago_noturno,
+            feriado_pago_total=pago_feriado,
+            extras_pago_total=pago_extras,
+            formacao_pago_total=pago_formacao,
+            alim_pago_total=pago_alim,
         )
 
         st.divider()
@@ -351,7 +442,7 @@ with aba1:
         m1.metric("Total Devido (CCT)", f"{resultado['total_devido']:.2f} EUR")
         m2.metric("Total Pago em Recibo", f"{resultado['total_pago']:.2f} EUR")
         m3.metric(
-            "Diferenca Apurada",
+            "Diferença em Falta",
             f"{resultado['desvio_total']:.2f} EUR",
             delta=f"{-resultado['desvio_total']:.2f} EUR" if resultado["desvio_total"] > 0 else "0.00 EUR",
             delta_color="inverse",
@@ -361,12 +452,12 @@ with aba1:
         st.dataframe(df_det, use_container_width=True, hide_index=True)
 
         validado = False
-        codigo_caso = "SIMULACAO-LOCAL"
+        codigo_caso = "SIMULAÇÃO-LOCAL"
 
         if ficheiro_pdf is not None:
             bytes_pdf = ficheiro_pdf.read()
             val = validar_recibo_em_memoria(bytes_pdf, enq["nipc"])
-            del bytes_pdf  # Eliminacao explicita em memoria
+            del bytes_pdf
 
             if val["valido"]:
                 validado = True
@@ -380,39 +471,39 @@ with aba1:
                         "distrito": distrito_sel,
                         "tipo_infracao": tipo_principal,
                         "desvio_eur": resultado["desvio_total"],
-                        "ano_mes": f"{mes_sel}/{ano_sel}",
+                        "ano_mes": periodo_desc[:45],
                     }
                     ok, msg = guardar_registo_anonimo(reg)
                     if ok:
                         st.success(
-                            f"Recibo validado tecnicamente! O teu Codigo de Caso anonimo e: **{codigo_caso}**. "
-                            f"Guarda este codigo no telemovel para acompanhares o grupo coletivo na Aba 4."
+                            f"Recibo validado tecnicamente! O teu Código de Caso anónimo é: **{codigo_caso}**. "
+                            "Guarda este código para acompanhares o grupo coletivo na Aba 4."
                         )
                     else:
                         st.warning(msg)
                 else:
-                    st.info("Recibo validado, mas como nao existe desvio superior a 5 EUR, nao foi registado incumprimento.")
+                    st.info("Recibo validado, mas como não há desvio superior a 5 EUR, não foi registado incumprimento.")
             else:
-                st.error(f"Validacao falhou: {val['motivo']} O dossie sera gerado apenas como simulacao local.")
+                st.error(f"Validação falhou: {val['motivo']} O dossiê será gerado apenas como simulação local.")
         else:
             st.warning(
-                "Calculo efetuado em modo de simulacao manual (sem PDF validado). Para entrar no Radar Publico "
-                "e nos grupos de acao coletiva, carrega o PDF original do recibo."
+                "Cálculo efetuado em modo de simulação manual. Para entrar no Radar Público e nos grupos "
+                "de ação coletiva, anexa um recibo original em PDF."
             )
 
         pdf_bytes = gerar_pdf_auditoria(
             codigo_caso=codigo_caso,
             empresa=empresa_sel,
             distrito=distrito_sel,
-            mes_ano=f"{mes_sel}/{ano_sel}",
+            periodo_texto=periodo_desc,
             resultado=resultado,
             validado_pdf=validado,
         )
 
         st.download_button(
-            label="Descarregar Dossie Tecnico em PDF (Guardar no Telemovel)",
+            label="Descarregar Dossiê Técnico em PDF (Guardar no Dispositivo)",
             data=pdf_bytes,
-            file_name=f"Dossie_Auditoria_{mes_sel}_{ano_sel}.pdf",
+            file_name=f"Dossie_Auditoria_{ano_sel}.pdf",
             mime="application/pdf",
         )
 
@@ -421,11 +512,11 @@ with aba1:
 # ABA 2: DOCUMENTAR OUTROS INCUMPRIMENTOS (PROVA LEGAL)
 # ==============================================================================
 with aba2:
-    st.subheader("Assistente de Recolha de Prova e Cronologia de Ocorrencias")
+    st.subheader("Assistente de Recolha de Prova e Cronologia de Ocorrências")
     st.write(
-        "Incumprimentos como mudancas de posto sem aviso previo, alteracoes de escala em cima da hora ou "
-        "pressoes na transmissao de estabelecimento exigem registo cronologico objetivo. Preenche os dados "
-        "abaixo para gerar um relatorio estruturado pronto para a ACT."
+        "Incumprimentos como falta de horas de formação anual (40h/ano), mudanças de posto sem aviso prévio, "
+        "alterações de escala em cima da hora ou pressões na transmissão de estabelecimento exigem registo "
+        "cronológico objetivo. Preenche os dados abaixo para gerar um relatório técnico pronto para a ACT ou Sindicato."
     )
 
     col_o1, col_o2 = st.columns(2)
@@ -434,83 +525,88 @@ with aba2:
         tipo_oc = st.selectbox("Tipologia do Incumprimento", TIPOS_INCUMPRIMENTO, key="tipo_oc")
     with col_o2:
         dist_oc = st.selectbox("Distrito", DISTRITOS_PORTUGAL, key="dist_oc")
-        data_oc = st.date_input("Data da Ocorrencia", value=datetime.date.today())
+        periodo_oc = st.text_input(
+            "Data ou Período dos Factos (ex.: 15/11/2026 ou Anos 2024 a 2026)",
+            value=datetime.date.today().strftime("%d/%m/%Y"),
+        )
 
     posto_gen = st.selectbox(
-        "Tipologia do Posto (sem identificar o cliente especifico para evitar retalicao)",
+        "Tipologia do Posto (sem identificar o cliente específico para evitar retaliação)",
         [
-            "Superficie Comercial / Retalho",
-            "Infraestrutura de Transportes / Estacao",
-            "Unidade Hospitalar / Saude",
-            "Edificio de Escritorios / Banca",
-            "Unidade Industrial / Logistica",
-            "Edificio Publico / Estado",
-            "Rondas Moveis",
+            "Superfície Comercial / Retalho",
+            "Infraestrutura de Transportes / Estação",
+            "Unidade Hospitalar / Saúde",
+            "Edifício de Escritórios / Banca",
+            "Unidade Industrial / Logística",
+            "Edifício Público / Estado",
+            "Rondas Móveis",
         ],
     )
 
     desc_factual = st.text_area(
-        "Descricao objetiva dos factos (datas, horas, ordens recebidas - evita insultos ou nomes individuais)",
-        placeholder="Exemplo: No dia 12/11/2026 as 19h30 recebi mensagem escrita a ordenar apresentacao noutro posto a 32 km de distancia no dia seguinte as 07h00, sem aviso previo de 8 dias nem justificacao escrita...",
-        height=130,
+        "Descrição objetiva dos factos (datas, horas, ordens recebidas - evita insultos ou nomes individuais)",
+        placeholder="Exemplo: Nos anos de 2024, 2025 e 2026 não me foram ministradas as 40 horas anuais de formação contínua obrigatória previstas no Art. 131.º do Código do Trabalho, acumulando 120 horas de formação em falta...",
+        height=140,
     )
 
-    st.markdown("**Checklist de Provas que ja tens guardadas no teu telemovel:**")
+    st.markdown("**Checklist de Provas Documentais guardadas no teu telemóvel/PC:**")
     provas = []
-    if st.checkbox("Captura de ecrã de SMS / WhatsApp / Email com data e hora visiveis"):
-        provas.append("Captura de ecrã de comunicacao escrita com data e hora")
-    if st.checkbox("Copia da escala de servico original antes da alteracao"):
-        provas.append("Escala de servico inicial comprovativa")
-    if st.checkbox("Comprovativo de distancia extra em km (ex.: print Google Maps)"):
-        provas.append("Registo de acrescimo de distancia de deslocacao")
-    if st.checkbox("Copia de contrato anterior / comprovativo de antiguidade no posto"):
-        provas.append("Comprovativo de antiguidade e condicoes contratuais")
+    if st.checkbox("Captura de ecrã de SMS / WhatsApp / Email com data e hora visíveis"):
+        provas.append("Captura de ecrã de comunicação escrita com data e hora")
+    if st.checkbox("Cópia das escalas de serviço originais e alteradas"):
+        provas.append("Escalas de serviço comprovativas")
+    if st.checkbox("Recibos de vencimento comprovando ausência de pagamento de formação/horas"):
+        provas.append("Recibos de vencimento do período em causa")
+    if st.checkbox("Comprovativo de distância extra em km (ex.: print Google Maps)"):
+        provas.append("Registo de acréscimo de distância de deslocação")
+    if st.checkbox("Cópia de contrato anterior / comprovativo de antiguidade no posto"):
+        provas.append("Comprovativo de antiguidade e condições contratuais")
 
-    if st.button("Gerar Relatorio Cronologico em PDF"):
+    if st.button("Gerar Relatório Cronológico em PDF"):
         if len(desc_factual.strip()) < 20:
-            st.error("Por favor, descreve os factos com um minimo de detalhe objetivo antes de gerar o PDF.")
+            st.error("Por favor, descreve os factos com um mínimo de detalhe objetivo antes de gerar o PDF.")
         else:
             pdf_oc = gerar_pdf_ocorrencia(
                 empresa=emp_oc,
                 distrito=dist_oc,
                 tipo_infracao=tipo_oc,
-                data_ocorrencia=data_oc.strftime("%d/%m/%Y"),
+                periodo_ocorrencia=periodo_oc,
                 posto_tipo=posto_gen,
                 descricao_factual=desc_factual,
                 provas_reunidas=provas,
             )
             st.download_button(
-                label="Descarregar Relatorio de Ocorrencia (PDF)",
+                label="Descarregar Relatório de Ocorrência (PDF)",
                 data=pdf_oc,
-                file_name=f"Relatorio_Ocorrencia_{data_oc.strftime('%Y%m%d')}.pdf",
+                file_name="Relatorio_Ocorrencia_Laboral.pdf",
                 mime="application/pdf",
             )
 
 
 # ==============================================================================
-# ABA 3: RADAR ESTATISTICO DO SETOR (DADOS AGREGADOS PUBLICOS)
+# ABA 3: RADAR ESTATÍSTICO DO SETOR
 # ==============================================================================
 with aba3:
-    st.subheader("Radar Publico de Conformidade Laboral")
+    st.subheader("Radar Público de Conformidade Laboral")
     st.write(
         "Indicadores agregados baseados exclusivamente em recibos auditados tecnicamente. "
-        "Nenhum trabalhador ou posto isolado e identificado."
+        "Nenhum trabalhador ou posto isolado é identificado."
     )
 
     dados = carregar_todos_registos()
     if not dados:
         st.info(
-            "Ainda nao existem registos validados suficientes para exibir estatisticas agregadas. "
-            "Assim que os primeiros recibos forem auditados na Aba 1, os indicadores surgirao aqui automaticamente."
+            "Ainda não existem registos validados suficientes para exibir estatísticas agregadas. "
+            "Assim que os primeiros recibos forem auditados na Aba 1, os indicadores surgirão aqui automaticamente."
         )
     else:
         df = pd.DataFrame(dados)
         c_k1, c_k2, c_k3 = st.columns(3)
         c_k1.metric("Total de Auditorias Validadas", len(df))
-        c_k2.metric("Desvio Medio Apurado", f"{df['desvio_eur'].mean():.2f} EUR")
+        c_k2.metric("Desvio Médio Apurado", f"{df['desvio_eur'].mean():.2f} EUR")
         c_k3.metric("Total Acumulado em Falta", f"{df['desvio_eur'].sum():.2f} EUR")
 
-        st.markdown("#### Incidencia por Entidade Empregadora")
+        st.markdown("#### Incidência por Entidade Empregadora")
         resumo_emp = (
             df.groupby("empresa")
             .agg(
@@ -529,18 +625,18 @@ with aba3:
 
 
 # ==============================================================================
-# ABA 4: ACAO COLETIVA & CANAIS AUTONOMOS ZERO-ADMIN
+# ABA 4: AÇÃO COLETIVA & CANAIS AUTÓNOMOS ZERO-ADMIN
 # ==============================================================================
 with aba4:
-    st.subheader("Coordenacao de Acoes Coletivas e Queixas Conjuntas")
+    st.subheader("Coordenação de Ações Coletivas e Queixas Conjuntas")
     st.write(
         f"Quando pelo menos **{LIMIAR_GRUPO_COLETIVO} vigilantes** da mesma empresa e distrito registam "
         "um recibo validado com o mesmo tipo de incumprimento, o sistema desbloqueia automaticamente "
-        "uma sala de comunicacao encriptada sem administracao externa."
+        "uma sala de comunicação encriptada sem administração externa."
     )
 
     codigo_consulta = st.text_input(
-        "Insere o teu Codigo de Caso (ex.: VIG-8A2F-19C4)",
+        "Insere o teu Código de Caso (ex.: VIG-8A2F-19C4)",
         max_chars=20,
     ).strip().upper()
 
@@ -549,7 +645,7 @@ with aba4:
         caso_encontrado = next((d for d in dados if d.get("codigo_caso") == codigo_consulta), None)
 
         if not caso_encontrado:
-            st.error("Codigo de caso nao encontrado. Verifica se copiaste corretamente apos a auditoria na Aba 1.")
+            st.error("Código de caso não encontrado. Verifica se copiaste corretamente após a auditoria na Aba 1.")
         else:
             emp_c = caso_encontrado["empresa"]
             dist_c = caso_encontrado["distrito"]
@@ -563,10 +659,10 @@ with aba4:
 
             st.markdown(
                 f"""
-                <div class="legal-box">
+                <div class="info-card">
                     <strong>Processo Associado:</strong> {emp_c} | <strong>Distrito:</strong> {dist_c}<br>
-                    <strong>Infracao:</strong> {tipo_c}<br>
-                    <strong>Progresso do Grupo:</strong> {total_grupo} de {LIMIAR_GRUPO_COLETIVO} casos validados necessarios
+                    <strong>Infração:</strong> {tipo_c}<br>
+                    <strong>Progresso do Grupo:</strong> {total_grupo} de {LIMIAR_GRUPO_COLETIVO} casos validados necessários
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -581,20 +677,20 @@ with aba4:
                     "a sala segura do grupo. Partilha esta ferramenta com colegas do teu posto."
                 )
             else:
-                st.success("Limiar de Massa Critica atingido! O canal encriptado deste grupo esta disponivel.")
+                st.success("Limiar de Massa Crítica atingido! O canal encriptado deste grupo está disponível.")
                 aceite_saida = st.checkbox(
-                    "Declaro que compreendo que este link abre uma sala externa encriptada em memoria RAM, "
-                    "sem moderacao, acesso ou armazenamento por parte do criador deste site, e comprometo-me "
-                    "a usar um pseudonimo sem expor dados pessoais nem difamar terceiros."
+                    "Declaro que compreendo que este link abre uma sala externa encriptada em memória RAM, "
+                    "sem moderação, acesso ou armazenamento por parte do criador deste site, e comprometo-me "
+                    "a usar um pseudónimo sem expor dados pessoais nem difamar terceiros."
                 )
                 if aceite_saida:
                     links = gerar_links_sala_autonoma(emp_c, dist_c, tipo_c)
                     st.markdown(
                         f"""
                         <div class="alert-amber">
-                            <strong>Canal Seguro Desbloqueado (Usa Pseudonimo):</strong><br>
+                            <strong>Canal Seguro Desbloqueado (Usa Pseudónimo):</strong><br>
                             - Sala de Chat Encriptado (Texto em RAM): <a href="{links['chat_texto']}" target="_blank">{links['chat_texto']}</a><br>
-                            - Sala de Reuniao de Voz (Opcional): <a href="{links['sala_voz']}" target="_blank">{links['sala_voz']}</a>
+                            - Sala de Reunião de Voz (Opcional): <a href="{links['sala_voz']}" target="_blank">{links['sala_voz']}</a>
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -602,26 +698,136 @@ with aba4:
 
 
 # ==============================================================================
-# ABA 5: FAQ, TERMOS & PROTECAO LEGAL
+# ABA 5: GUIA DO VIGILANTE, SINDICATOS, GREVES & QUADRO LEGAL
 # ==============================================================================
 with aba5:
-    st.subheader("Quadro Legal, Privacidade e Perguntas Frequentes")
+    st.subheader("Guia de Defesa Laboral do Vigilante, Sindicalismo e Quadro Legal")
 
-    st.markdown("### Aviso Legal e Isencao de Responsabilidade")
     st.markdown(
         """
-        <div class="legal-box">
-            <strong>1. Natureza Informativa:</strong> Esta plataforma e uma ferramenta independente de calculo
-            matematico e literacia laboral baseada nos Contratos Coletivos de Trabalho (CCT) e no Codigo do
-            Trabalho portugues. Os resultados tem carater indicativo e nao constituem aconselhamento juridico
+        <div class="guide-card">
+            <h3>1. Uma Nova Era na Segurança Privada: Não Estás Sozinho</h3>
+            <p>Durante décadas, o maior trunfo contra os vigilantes foi o isolamento entre postos e o desconhecimento
+            técnico das regras salariais. Muitos profissionais aceitam cortes nas horas noturnas, escalas alteradas
+            de véspera ou perdas de antiguidade por acreditarem que reclamar sozinho não dá resultado.</p>
+            <p>Esta ferramenta marca o início de uma mudança de paradigma: <strong>conhecimento jurídico acessível,
+            documentação rigorosa e união inteligente</strong>. Quando cada vigilante sabe calcular o seu recibo ao
+            cêntimo e guarda provas organizadas, o equilíbrio de forças muda.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        <div class="guide-card">
+            <h3>2. Para que servem os CCTs e quais existem atualmente?</h3>
+            <p>O <strong>Contrato Coletivo de Trabalho (CCT)</strong> é a lei específica negociada entre as associações
+            patronais (como a <strong>AES</strong> e a <strong>AESIRF</strong>) e os sindicatos do setor. Define tudo
+            o que melhora o Código do Trabalho geral: tabelas salariais acima do salário mínimo, subsídio de alimentação,
+            acréscimo noturno (25%), pagamento de feriados, subsídios de função (aeroportuária, transporte de valores,
+            porteiro/rondista) e regras de transmissão de estabelecimento.</p>
+            <ul>
+                <li><strong>Principais CCTs em vigor no setor:</strong> CCT AES / STAD, CCT AES / ASSP, CCT AESIRF / FETESE
+                e CCT AESIRF / SUSP (além das <em>Portarias de Extensão</em> publicadas pelo Governo que alargam as
+                tabelas a empresas não filiadas).</li>
+                <li><strong>Quando são negociados?</strong> Por norma, a revisão salarial anual é negociada entre o
+                final do ano e o primeiro trimestre do ano seguinte, sendo publicada no <strong>Boletim do Trabalho e
+                Emprego (BTE)</strong>. Frequentemente inclui pagamentos com efeitos retroativos a janeiro.</li>
+            </ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        <div class="guide-card">
+            <h3>3. A Importância de Ser Sindicalizado (Análise Objetiva e Imparcial)</h3>
+            <p>Muitos vigilantes hesitam por causa da quota mensal (em média cerca de <strong>1% do salário base</strong>),
+            mas ignoram o retorno financeiro e jurídico real:</p>
+            <ul>
+                <li><strong>Apoio Jurídico Gratuito vs. Advogado Particular:</strong> Um processo judicial laboral
+                individual pode custar entre 1.000 EUR e 3.000 EUR em honorários e custas. Um sócio sindicalizado tem
+                acesso gratuito aos advogados do sindicato.</li>
+                <li><strong>Benefício Fiscal no IRS:</strong> Em Portugal, as quotizações sindicais têm uma majoração
+                fiscal na declaração de IRS (dedução acrescida em 50% dentro dos limites legais), o que reduz o custo
+                líquido real da quota ao longo do ano.</li>
+                <li><strong>O Peso da Força Numérica:</strong> Um sindicato com 500 sócios tem pouco poder de pressão
+                junto das grandes empresas e do Ministério; um sindicato com milhares de vigilantes ativos consegue
+                bloquear retrocessos e impor aumentos reais.</li>
+                <li><strong>O Erro Mais Comum:</strong> Muitos profissionais só se sindicalizam quando já têm um
+                problema grave em tribunal e sem qualquer prova guardada. Os processos judiciais levam tempo, mas
+                avançar com apoio sindical e provas já reunidas é sempre incomparavelmente mais seguro do que lutar
+                sozinho.</li>
+                <li><strong>Como Escolher um Sindicato (Liberdade Sindical):</strong> A Constituição garante liberdade
+                total de escolha. Avalia a rapidez de resposta do gabinete jurídico, a transparência dos acordos
+                assinados e a presença na tua região. Se não estiveres satisfeito com um sindicato em particular,
+                podes desfiliar-te e escolher outro a qualquer momento.</li>
+            </ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        <div class="guide-card">
+            <h3>4. Greves na Segurança Privada: Direitos, Custos e Conquistas Reais</h3>
+            <ul>
+                <li><strong>Quem pode aderir à greve?</strong> Ao abrigo da Constituição e do Código do Trabalho,
+                <strong>qualquer vigilante abrangido pelo pré-aviso pode fazer greve, mesmo que não seja sindicalizado</strong>
+                e independentemente de qual sindicato convocou a greve. A empresa está legalmente proibida de aplicar
+                represálias ou contratar substitutos para o teu posto durante a greve.</li>
+                <li><strong>O que se perde vs. O que se ganha:</strong> Perde-se a retribuição e o subsídio de
+                alimentação correspondentes ao dia de greve. Contudo, foi precisamente através das greves e lutas
+                coletivas dos últimos anos que os vigilantes conquistaram aumentos significativos da tabela base
+                (evitando a colagem ao salário mínimo nacional), subidas no subsídio de alimentação e o reforço da
+                proteção na transmissão de estabelecimento (Art. 285.º), garantindo que não perdes a casa nem a
+                antiguidade quando muda a empresa de segurança no cliente.</li>
+            </ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        <div class="guide-card">
+            <h3>5. Conselhos Jurídicos de Base (Regras de Ouro do Vigilante)</h3>
+            <ul>
+                <li><strong>Nunca assines nada sob pressão:</strong> Se uma chefia apresentar uma adenda contratual,
+                acordo de revogação ou mudança de posto para assinar na hora, tens o direito de pedir uma cópia para
+                analisar com calma antes de assinar.</li>
+                <li><strong>Guarda sempre cópia das escalas e ordens:</strong> Tira captura de ecrã às escalas mensais
+                assim que saem e guarda mensagens escritas de alterações de turno ou deslocações.</li>
+                <li><strong>Crédito de Formação (Art. 131.º CT):</strong> Tens direito a 40 horas anuais de formação
+                certificada. Se a empresa não der formação durante 2 anos, essas horas convertem-se em crédito de
+                horas para formação por tua iniciativa ou têm de ser pagas na cessação do contrato.</li>
+                <li><strong>Prazo de Prescrição (Art. 337.º CT):</strong> Tens até 1 ano após o dia seguinte ao fim
+                do contrato de trabalho para reclamar judicialmente créditos laborais em falta (horas extras,
+                noturnas, feriados ou formação).</li>
+            </ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("### Aviso Legal e Isenção de Responsabilidade")
+    st.markdown(
+        """
+        <div class="info-card">
+            <strong>1. Natureza Informativa:</strong> Esta plataforma é uma ferramenta independente de cálculo
+            matemático e literacia laboral baseada nos Contratos Coletivos de Trabalho (CCT) e no Código do
+            Trabalho português. Os resultados têm caráter indicativo e não substituem aconselhamento jurídico
             profissional.<br><br>
-            <strong>2. Politica de Privacidade Custodia Zero (RGPD):</strong> Em cumprimento do Artigo 5. do RGPD,
-            esta plataforma nao recolhe nem armazena nomes, NIFs, moradas, contactos ou ficheiros PDF. Qualquer
-            documento submetido e lido exclusivamente em memoria RAM e eliminado imediatamente.<br><br>
-            <strong>3. Prevencao de Difamacao e Responsabilidade do Utilizador:</strong> O site nao publica
-            acusacoes nominais contra chefias ou clientes individuais. O utilizador declara que os dados
-            inseridos correspondem a verdade dos factos, assumindo responsabilidade legal nos termos do
-            Artigo 365. do Codigo Penal (Denuncia Caluniosa).
+            <strong>2. Política de Privacidade Custódia Zero (RGPD):</strong> Em cumprimento do Artigo 5.º do RGPD,
+            esta plataforma não recolhe nem armazena nomes, NIFs, moradas, contactos ou ficheiros PDF. Qualquer
+            documento submetido é lido exclusivamente em memória RAM e eliminado imediatamente.<br><br>
+            <strong>3. Prevenção de Difamação e Responsabilidade do Utilizador:</strong> O site não publica
+            acusações nominais contra chefias ou clientes individuais. O utilizador declara que os dados
+            inseridos correspondem à verdade dos factos, assumindo responsabilidade legal nos termos do
+            Artigo 365.º do Código Penal (Denúncia Caluniosa).
         </div>
         """,
         unsafe_allow_html=True,
@@ -630,23 +836,23 @@ with aba5:
     st.markdown("### Perguntas Frequentes (FAQ)")
     with st.expander("1. A minha empresa ou chefia consegue descobrir que usei este site?"):
         st.write(
-            "Nao. O site nao exige registo, nome, email nem numero de funcionario. Para protecao adicional, "
-            "utiliza sempre os dados moveis do teu telemovel e nunca a rede Wi-Fi do posto ou da empresa."
+            "Não. O site não exige registo, nome, email nem número de funcionário. Para proteção adicional, "
+            "utiliza sempre os dados móveis do teu telemóvel e nunca a rede Wi-Fi do posto ou da empresa."
         )
-    with st.expander("2. O criador do site fica com copia do meu recibo de vencimento?"):
+    with st.expander("2. O criador do site fica com cópia do meu recibo de vencimento?"):
         st.write(
-            "Nao. O ficheiro PDF e processado apenas na memoria temporaria do servidor para verificar a "
-            "autenticidade e gerar um codigo criptografico anonimo, sendo apagado no mesmo segundo."
+            "Não. O ficheiro PDF é processado apenas na memória temporária do servidor para verificar a "
+            "autenticidade e gerar um código criptográfico anónimo, sendo apagado no mesmo segundo."
         )
-    with st.expander("3. Como evitam denuncias falsas que retirem credibilidade ao site?"):
+    with st.expander("3. Como evitam denúncias falsas que retirem credibilidade ao site?"):
         st.write(
-            "As estatisticas publicas e os grupos coletivos aceitam apenas auditorias acompanhadas pela "
-            "leitura estrutural de um recibo original com NIPC valido, bloqueando submissoes duplicadas "
-            "atraves de uma assinatura criptografica irreversivel (SHA-256)."
+            "As estatísticas públicas e os grupos coletivos aceitam apenas auditorias acompanhadas pela "
+            "leitura estrutural de um recibo original com NIPC válido, bloqueando submissões duplicadas "
+            "através de uma assinatura criptográfica irreversível (SHA-256)."
         )
     with st.expander("4. Como funciona o grupo quando atingimos 10 casos na mesma empresa?"):
         st.write(
             "O sistema gera automaticamente um link para uma sala encriptada externa onde os detentores "
-            "dos codigos de caso podem coordenar uma queixa conjunta coordenada na ACT ou contratar "
-            "um advogado laboralista em grupo, dividindo custos."
+            "dos códigos de caso podem coordenar uma queixa conjunta na ACT ou contactar um sindicato ou "
+            "advogado laboralista em grupo."
         )
