@@ -3,7 +3,7 @@ from fpdf import FPDF
 
 
 def _limpar_texto(texto: str) -> str:
-    """Preserva todos os acentos portugueses (Latin-1) e substitui apenas o simbolo Euro."""
+    """Preserva todos os acentos portugueses (Latin-1) e substitui apenas o símbolo Euro."""
     if not texto:
         return ""
     substituicoes = {
@@ -57,6 +57,7 @@ def gerar_pdf_auditoria(
     pdf.set_auto_page_break(auto=True, margin=22)
 
     regras = resultado["regras"]
+    nipc_str = f" (NIPC: {regras['nipc']})" if regras.get("nipc") else ""
     data_emissao = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
 
     pdf.set_text_color(15, 23, 42)
@@ -67,7 +68,7 @@ def gerar_pdf_auditoria(
     linhas_meta = [
         f"Código de Referência: {codigo_caso}",
         f"Data de Emissão: {data_emissao}",
-        f"Entidade Empregadora: {empresa} (NIPC: {regras['nipc']})",
+        f"Entidade Empregadora: {empresa}{nipc_str}",
         f"Distrito do Posto: {distrito}",
         f"Período Auditado: {periodo_texto} ({resultado['num_meses']} mês/meses)",
         f"Instrumento Aplicável: {regras['cct']} (Tabela Ref. {regras['ano_aplicado']})",
@@ -112,7 +113,7 @@ def gerar_pdf_auditoria(
     texto_act = (
         f"Exmos. Senhores,\n\n"
         f"Na qualidade de trabalhador(a) da categoria profissional de Vigilante ao serviço da entidade "
-        f"{empresa} (NIPC {regras['nipc']}), venho reportar a existência de divergências no apuramento "
+        f"{empresa}{nipc_str}, venho reportar a existência de divergências no apuramento "
         f"retributivo referente ao período de {periodo_texto}, ao abrigo do {regras['cct']} e do Código do Trabalho.\n\n"
         f"Concretamente, apura-se um diferencial total de {resultado['desvio_total']:.2f} EUR entre os valores "
         f"legalmente devidos ({resultado['total_devido']:.2f} EUR) e os valores liquidados em recibo "
