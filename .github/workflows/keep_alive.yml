@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Verificar pagina principal e servidor Streamlit
         run: |
-          URL="https://https://observatorio-seguranca-privada.streamlit.app/"
+          URL="https://observatorio-seguranca-privada.streamlit.app"
           echo "A contactar: $URL"
           curl -f -s -S -L --retry 3 --retry-delay 5 -A "Mozilla/5.0" "$URL" -o /dev/null
           echo "Pagina principal OK (HTTP 200)"
