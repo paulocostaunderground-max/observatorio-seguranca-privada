@@ -6,54 +6,54 @@ TODOS_CCTS = [
     "Portaria de Extensão (CCT Setorial)",
 ]
 
-# Base de empresas de segurança privada em Portugal (NIPC + CCTs mais frequentes)
+# Base de empresas de segurança privada em Portugal (Palavras-chave de identificação + CCTs mais frequentes)
 EMPRESAS_SEGURANCA = {
     "2045 - Empresa de Segurança, S.A.": {
-        "nipc": "504493131",
+        "keywords": ["2045"],
         "ccts_sugeridos": ["CCT AESIRF / SUSP", "CCT AES / ASSP", "CCT AESIRF / FETESE"],
     },
     "Securitas - Serviços e Tecnologia de Segurança, S.A.": {
-        "nipc": "500243726",
+        "keywords": ["securitas"],
         "ccts_sugeridos": ["CCT AES / STAD", "CCT AES / ASSP"],
     },
     "Prosegur - Companhia de Segurança, Lda.": {
-        "nipc": "500826659",
+        "keywords": ["prosegur"],
         "ccts_sugeridos": ["CCT AES / STAD", "CCT AES / ASSP"],
     },
     "Strong Charon - Soluções de Segurança, S.A.": {
-        "nipc": "503212767",
+        "keywords": ["strong charon", "charon"],
         "ccts_sugeridos": ["CCT AES / STAD", "CCT AES / ASSP"],
     },
     "Ronsegur - Rondas e Segurança, S.A.": {
-        "nipc": "505264705",
+        "keywords": ["ronsegur"],
         "ccts_sugeridos": ["CCT AESIRF / FETESE", "CCT AESIRF / SUSP"],
     },
     "Prestibel - Empresa de Segurança, S.A.": {
-        "nipc": "501342108",
+        "keywords": ["prestibel"],
         "ccts_sugeridos": ["CCT AES / STAD", "CCT AES / ASSP"],
     },
     "PSG - Segurança Privada, S.A.": {
-        "nipc": "504556834",
+        "keywords": ["psg"],
         "ccts_sugeridos": ["CCT AESIRF / FETESE", "CCT AESIRF / SUSP"],
     },
     "Comansegur - Segurança Privada, S.A.": {
-        "nipc": "503727260",
+        "keywords": ["comansegur"],
         "ccts_sugeridos": ["CCT AESIRF / FETESE", "CCT AESIRF / SUSP"],
     },
     "Grupo 8 - Vigilância e Prevenção Eletrónica, Lda.": {
-        "nipc": "501279880",
+        "keywords": ["grupo 8"],
         "ccts_sugeridos": ["CCT AES / STAD", "CCT AES / ASSP"],
     },
     "Loomis Portugal, S.A.": {
-        "nipc": "500965284",
+        "keywords": ["loomis"],
         "ccts_sugeridos": ["CCT AES / STAD", "CCT AES / ASSP"],
     },
     "Prosegur Cash, S.A.": {
-        "nipc": "513322921",
+        "keywords": ["prosegur cash", "prosegur"],
         "ccts_sugeridos": ["CCT AES / STAD", "CCT AES / ASSP"],
     },
     "Outra Empresa (Abrangida por Portaria de Extensão)": {
-        "nipc": "000000000",
+        "keywords": [],
         "ccts_sugeridos": ["Portaria de Extensão (CCT Setorial)", "CCT AES / STAD", "CCT AESIRF / FETESE"],
     },
 }
@@ -80,7 +80,6 @@ TIPOS_INCUMPRIMENTO = [
 ]
 
 # Tabelas salariais de referência por ano e CCT (Categoria: Vigilante)
-# Atualiza estes valores sempre que sair nova tabela no Boletim do Trabalho e Emprego (BTE)
 _REGRAS_BASE_ANO = {
     2023: {"base": 838.44, "sub_alim_dia": 6.40, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_pct": 0.375},
     2024: {"base": 892.94, "sub_alim_dia": 6.80, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_pct": 0.375},
@@ -91,18 +90,28 @@ _REGRAS_BASE_ANO = {
 TABELAS_CCT = {cct: _REGRAS_BASE_ANO for cct in TODOS_CCTS}
 
 
-def obter_sugestoes_cct(empresa: str) -> tuple[str, list]:
+def validar_nipc_portugues(nipc: str) -> bool:
+    """Valida matematicamente um NIPC empresarial português através do algoritmo Módulo 11."""
+    if not nipc or len(nipc) != 9 or not nipc.isdigit():
+        return False
+    if nipc[0] not in ("5", "6", "7", "8", "9"):
+        return False
+    soma = sum(int(nipc[i]) * (9 - i) for i in range(8))
+    resto = soma % 11
+    digito_controlo = 0 if resto in (0, 1) else 11 - resto
+    return int(nipc[8]) == digito_controlo
+
+
+def obter_sugestoes_cct(empresa: str) -> list:
     info = EMPRESAS_SEGURANCA.get(
         empresa,
-        {"nipc": "000000000", "ccts_sugeridos": ["Portaria de Extensão (CCT Setorial)"]},
+        {"keywords": [], "ccts_sugeridos": ["Portaria de Extensão (CCT Setorial)"]},
     )
     sugeridos = info["ccts_sugeridos"]
-    lista_ordenada = sugeridos + [c for c in TODOS_CCTS if c not in sugeridos]
-    return info["nipc"], lista_ordenada
+    return sugeridos + [c for c in TODOS_CCTS if c not in sugeridos]
 
 
 def obter_enquadramento(empresa: str, ano: int, cct_escolhido: str) -> dict:
-    nipc, _ = obter_sugestoes_cct(empresa)
     ano_ref = max(2023, min(2026, ano))
     regras = TABELAS_CCT[cct_escolhido][ano_ref]
 
@@ -110,7 +119,6 @@ def obter_enquadramento(empresa: str, ano: int, cct_escolhido: str) -> dict:
     valor_hora = round((regras["base"] * 12) / (52 * 40), 4)
 
     return {
-        "nipc": nipc,
         "cct": cct_escolhido,
         "ano_aplicado": ano_ref,
         "valor_hora": valor_hora,
