@@ -1,16 +1,24 @@
 TODOS_CCTS = [
+    "CCT AESIRF / SUSP",
+    "CCT AESIRF / FETESE",
     "CCT AES / STAD",
     "CCT AES / ASSP",
-    "CCT AESIRF / FETESE",
-    "CCT AESIRF / SUSP",
     "Portaria de Extensão (CCT Setorial)",
 ]
 
-# Base de empresas de segurança privada em Portugal (Palavras-chave de identificação + CCTs mais frequentes)
+CATEGORIAS_PROFISSIONAIS = [
+    "Vigilante / Porteiro / Guarda (Nível XIX)",
+    "Vigilante Aeroportuário / Portuário APA-A / APA-P (Nível XIII)",
+    "Vigilante Chefe / Controlador (Nível XIV)",
+    "Operador de Valores (Nível XVI)",
+    "Vigilante de Transporte de Valores (Nível VII)",
+]
+
+# Base de empresas de segurança privada em Portugal (Palavras-chave + CCTs mais frequentes)
 EMPRESAS_SEGURANCA = {
     "2045 - Empresa de Segurança, S.A.": {
         "keywords": ["2045"],
-        "ccts_sugeridos": ["CCT AESIRF / SUSP", "CCT AES / ASSP", "CCT AESIRF / FETESE"],
+        "ccts_sugeridos": ["CCT AESIRF / SUSP", "CCT AESIRF / FETESE", "CCT AES / ASSP"],
     },
     "Securitas - Serviços e Tecnologia de Segurança, S.A.": {
         "keywords": ["securitas"],
@@ -54,7 +62,7 @@ EMPRESAS_SEGURANCA = {
     },
     "Outra Empresa (Abrangida por Portaria de Extensão)": {
         "keywords": [],
-        "ccts_sugeridos": ["Portaria de Extensão (CCT Setorial)", "CCT AES / STAD", "CCT AESIRF / FETESE"],
+        "ccts_sugeridos": ["Portaria de Extensão (CCT Setorial)", "CCT AES / STAD", "CCT AESIRF / SUSP"],
     },
 }
 
@@ -68,7 +76,7 @@ DISTRITOS_PORTUGAL = [
 TIPOS_INCUMPRIMENTO = [
     "Trabalho Suplementar (Horas Extras) não pago ou acumulado",
     "Horas Noturnas (21h-06h) mal pagas ou omitidas",
-    "Trabalho em Dia Feriado não remunerado corretamente",
+    "Trabalho em Dia Feriado ou Descanso Semanal não remunerado",
     "Falta de pagamento de Horas de Formação realizadas",
     "Falta de Horas de Formação Obrigatória (40h/ano - Art. 131.º CT)",
     "Mudança de Posto sem aviso prévio legal (Art. 194.º CT)",
@@ -79,15 +87,53 @@ TIPOS_INCUMPRIMENTO = [
     "Falta de pagamento de Despesas de Deslocação / Km",
 ]
 
-# Tabelas salariais de referência por ano e CCT (Categoria: Vigilante)
-_REGRAS_BASE_ANO = {
-    2023: {"base": 838.44, "sub_alim_dia": 6.40, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_pct": 0.375},
-    2024: {"base": 892.94, "sub_alim_dia": 6.80, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_pct": 0.375},
-    2025: {"base": 942.05, "sub_alim_dia": 7.15, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_pct": 0.375},
-    2026: {"base": 985.00, "sub_alim_dia": 7.45, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_pct": 0.375},
+# Tabelas salariais oficiais publicadas no BTE (BTE 29/2023, BTE 4/2024, BTE 48/2024 e BTE 5/2025)
+TABELAS_OFICIAIS_BTE = {
+    "Vigilante / Porteiro / Guarda (Nível XIX)": {
+        2023: {"base": 860.00, "sub_alim_dia": 6.65},
+        2024: {"base": 912.53, "sub_alim_dia": 7.05},
+        2025: {"base": 960.62, "sub_alim_dia": 7.42},
+        2026: {"base": 1015.95, "sub_alim_dia": 7.85},
+    },
+    "Vigilante Aeroportuário / Portuário APA-A / APA-P (Nível XIII)": {
+        2023: {"base": 963.36, "sub_alim_dia": 6.65},
+        2024: {"base": 1022.13, "sub_alim_dia": 7.05},
+        2025: {"base": 1076.00, "sub_alim_dia": 7.42},
+        2026: {"base": 1137.98, "sub_alim_dia": 7.85},
+    },
+    "Vigilante Chefe / Controlador (Nível XIV)": {
+        2023: {"base": 951.97, "sub_alim_dia": 6.65},
+        2024: {"base": 1010.04, "sub_alim_dia": 7.05},
+        2025: {"base": 1063.27, "sub_alim_dia": 7.42},
+        2026: {"base": 1124.51, "sub_alim_dia": 7.85},
+    },
+    "Operador de Valores (Nível XVI)": {
+        2023: {"base": 925.96, "sub_alim_dia": 6.85},
+        2024: {"base": 982.45, "sub_alim_dia": 7.26},
+        2025: {"base": 1034.23, "sub_alim_dia": 7.64},
+        2026: {"base": 1093.80, "sub_alim_dia": 8.08},
+    },
+    "Vigilante de Transporte de Valores (Nível VII)": {
+        2023: {"base": 1197.98, "sub_alim_dia": 7.64},
+        2024: {"base": 1271.06, "sub_alim_dia": 8.10},
+        2025: {"base": 1338.06, "sub_alim_dia": 8.53},
+        2026: {"base": 1415.13, "sub_alim_dia": 9.02},
+    },
 }
 
-TABELAS_CCT = {cct: _REGRAS_BASE_ANO for cct in TODOS_CCTS}
+# Acréscimos convencionais do CCT da Segurança Privada:
+# - Trabalho noturno (21h às 06h): +25% sobre o valor hora base
+# - Trabalho suplementar diurno: +50% (1,50 x Valor Hora)
+# - Trabalho suplementar noturno: +75% (1,75 x Valor Hora)
+# - Trabalho normal em dia feriado: +100% acréscimo (1,00 x Valor Hora adicional ao base)
+# - Trabalho suplementar em dia feriado ou descanso semanal: +100% total (2,00 x Valor Hora)
+ACRESCIMOS_CCT = {
+    "noturno_pct": 0.25,
+    "extra_diurna_mult": 1.50,
+    "extra_noturna_mult": 1.75,
+    "feriado_normal_mult": 1.00,
+    "feriado_descanso_extra_mult": 2.00,
+}
 
 
 def validar_nipc_portugues(nipc: str) -> bool:
@@ -111,18 +157,29 @@ def obter_sugestoes_cct(empresa: str) -> list:
     return sugeridos + [c for c in TODOS_CCTS if c not in sugeridos]
 
 
-def obter_enquadramento(empresa: str, ano: int, cct_escolhido: str) -> dict:
+def obter_enquadramento(
+    empresa: str,
+    ano: int,
+    cct_escolhido: str,
+    categoria: str = "Vigilante / Porteiro / Guarda (Nível XIX)",
+) -> dict:
     ano_ref = max(2023, min(2026, ano))
-    regras = TABELAS_CCT[cct_escolhido][ano_ref]
+    tabela_cat = TABELAS_OFICIAIS_BTE.get(
+        categoria, TABELAS_OFICIAIS_BTE["Vigilante / Porteiro / Guarda (Nível XIX)"]
+    )
+    valores_ano = tabela_cat[ano_ref]
 
     # Fórmula legal do valor hora: (Retribuição Base * 12) / (52 semanas * 40 horas)
-    valor_hora = round((regras["base"] * 12) / (52 * 40), 4)
+    valor_hora = round((valores_ano["base"] * 12) / (52 * 40), 4)
 
     return {
         "cct": cct_escolhido,
+        "categoria": categoria,
         "ano_aplicado": ano_ref,
+        "base": valores_ano["base"],
+        "sub_alim_dia": valores_ano["sub_alim_dia"],
         "valor_hora": valor_hora,
-        **regras,
+        **ACRESCIMOS_CCT,
     }
 
 
@@ -130,10 +187,13 @@ def calcular_auditoria_periodo(
     empresa: str,
     ano: int,
     cct_escolhido: str,
+    categoria: str,
     num_meses: int,
     horas_noturnas_totais: float,
-    horas_feriado_totais: float,
-    horas_extras_totais: float,
+    horas_feriado_normais: float,
+    horas_extras_diurnas: float,
+    horas_extras_noturnas: float,
+    horas_extras_feriado_descanso: float,
     horas_formacao_nao_pagas: float,
     dias_trabalhados_totais: int,
     base_pago_total: float,
@@ -143,13 +203,26 @@ def calcular_auditoria_periodo(
     formacao_pago_total: float,
     alim_pago_total: float,
 ) -> dict:
-    regras = obter_enquadramento(empresa, ano, cct_escolhido)
+    regras = obter_enquadramento(empresa, ano, cct_escolhido, categoria)
     vh = regras["valor_hora"]
 
     base_devido = round(regras["base"] * num_meses, 2)
     noturno_devido = round(horas_noturnas_totais * vh * regras["noturno_pct"], 2)
-    feriado_devido = round(horas_feriado_totais * vh * regras["feriado_pct"], 2)
-    extras_devido = round(horas_extras_totais * vh * (1 + regras["extra_pct"]), 2)
+
+    # Feriado normal (já incluído no base, acresce +100%) + Horas extras em feriado/descanso (200% total)
+    feriado_devido = round(
+        (horas_feriado_normais * vh * regras["feriado_normal_mult"])
+        + (horas_extras_feriado_descanso * vh * regras["feriado_descanso_extra_mult"]),
+        2,
+    )
+
+    # Horas extras diurnas (+50% = 1,50x VH) + Horas extras noturnas (+75% = 1,75x VH)
+    extras_devido = round(
+        (horas_extras_diurnas * vh * regras["extra_diurna_mult"])
+        + (horas_extras_noturnas * vh * regras["extra_noturna_mult"]),
+        2,
+    )
+
     formacao_devido = round(horas_formacao_nao_pagas * vh, 2)
     alim_devido = round(dias_trabalhados_totais * regras["sub_alim_dia"], 2)
 
@@ -171,19 +244,19 @@ def calcular_auditoria_periodo(
             "Diferença (EUR)": round(base_devido - base_pago_total, 2),
         },
         {
-            "Rubrica": f"Acréscimo Noturno ({int(regras['noturno_pct']*100)}%)",
+            "Rubrica": "Acréscimo Noturno 21h-06h (+25%)",
             "Devido (EUR)": noturno_devido,
             "Pago (EUR)": noturno_pago_total,
             "Diferença (EUR)": round(noturno_devido - noturno_pago_total, 2),
         },
         {
-            "Rubrica": f"Trabalho em Feriado (+{int(regras['feriado_pct']*100)}%)",
+            "Rubrica": "Trabalho em Feriado / Descanso Semanal (+100%)",
             "Devido (EUR)": feriado_devido,
             "Pago (EUR)": feriado_pago_total,
             "Diferença (EUR)": round(feriado_devido - feriado_pago_total, 2),
         },
         {
-            "Rubrica": "Trabalho Suplementar (Horas Extras)",
+            "Rubrica": "Trabalho Suplementar (Diurno +50% / Noturno +75%)",
             "Devido (EUR)": extras_devido,
             "Pago (EUR)": extras_pago_total,
             "Diferença (EUR)": round(extras_devido - extras_pago_total, 2),
@@ -195,7 +268,7 @@ def calcular_auditoria_periodo(
             "Diferença (EUR)": round(formacao_devido - formacao_pago_total, 2),
         },
         {
-            "Rubrica": "Subsídio de Alimentação",
+            "Rubrica": f"Subsídio de Alimentação ({regras['sub_alim_dia']:.2f} EUR/dia)",
             "Devido (EUR)": alim_devido,
             "Pago (EUR)": alim_pago_total,
             "Diferença (EUR)": round(alim_devido - alim_pago_total, 2),
