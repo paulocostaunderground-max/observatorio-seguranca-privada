@@ -27,7 +27,7 @@ class DossiePDF(FPDF):
         self.set_text_color(255, 255, 255)
         self.set_font("helvetica", "B", 13)
         self.set_xy(12, 7)
-        self.cell(0, 6, _limpar_texto("OBSERVATÓRIO TÉCNICO DA SEGURANÇA PRIVADA"), ln=True)
+        self.cell(0, 6, _limpar_texto("VIGILANTE INFORMADO - APOIO TÉCNICO & CCT"), ln=True)
         self.set_font("helvetica", "", 9)
         self.set_x(12)
         self.cell(0, 5, _limpar_texto("Dossiê Técnico de Apuramento Laboral - Documento Exclusivo do Trabalhador"), ln=True)
