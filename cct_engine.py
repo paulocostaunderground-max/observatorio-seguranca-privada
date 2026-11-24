@@ -1,177 +1,202 @@
-import datetime
+TODOS_CCTS = [
+    "CCT AES / STAD",
+    "CCT AES / ASSP",
+    "CCT AESIRF / FETESE",
+    "CCT AESIRF / SUSP",
+    "Portaria de Extensão (CCT Setorial)",
+]
 
-# Base de empresas de seguranca privada em Portugal (NIPC + Associacao Patronal / CCT)
+# Base de empresas de segurança privada em Portugal (NIPC + CCTs mais frequentes)
 EMPRESAS_SEGURANCA = {
-    "Securitas - Servicos e Tecnologia de Seguranca, S.A.": {
-        "nipc": "500243726",
-        "cct": "CCT AES / STAD",
-    },
-    "Prosegur - Companhia de Seguranca, Lda.": {
-        "nipc": "500826659",
-        "cct": "CCT AES / STAD",
-    },
-    "Strong Charon - Solucoes de Seguranca, S.A.": {
-        "nipc": "503212767",
-        "cct": "CCT AES / STAD",
-    },
-    "2045 - Empresa de Seguranca, S.A.": {
+    "2045 - Empresa de Segurança, S.A.": {
         "nipc": "504493131",
-        "cct": "CCT AESIRF / FETESE",
+        "ccts_sugeridos": ["CCT AESIRF / SUSP", "CCT AES / ASSP", "CCT AESIRF / FETESE"],
     },
-    "Ronsegur - Rondas e Seguranca, S.A.": {
+    "Securitas - Serviços e Tecnologia de Segurança, S.A.": {
+        "nipc": "500243726",
+        "ccts_sugeridos": ["CCT AES / STAD", "CCT AES / ASSP"],
+    },
+    "Prosegur - Companhia de Segurança, Lda.": {
+        "nipc": "500826659",
+        "ccts_sugeridos": ["CCT AES / STAD", "CCT AES / ASSP"],
+    },
+    "Strong Charon - Soluções de Segurança, S.A.": {
+        "nipc": "503212767",
+        "ccts_sugeridos": ["CCT AES / STAD", "CCT AES / ASSP"],
+    },
+    "Ronsegur - Rondas e Segurança, S.A.": {
         "nipc": "505264705",
-        "cct": "CCT AESIRF / FETESE",
+        "ccts_sugeridos": ["CCT AESIRF / FETESE", "CCT AESIRF / SUSP"],
     },
-    "Prestibel - Empresa de Seguranca, S.A.": {
+    "Prestibel - Empresa de Segurança, S.A.": {
         "nipc": "501342108",
-        "cct": "CCT AES / STAD",
+        "ccts_sugeridos": ["CCT AES / STAD", "CCT AES / ASSP"],
     },
-    "PSG - Seguranca Privada, S.A.": {
+    "PSG - Segurança Privada, S.A.": {
         "nipc": "504556834",
-        "cct": "CCT AESIRF / FETESE",
+        "ccts_sugeridos": ["CCT AESIRF / FETESE", "CCT AESIRF / SUSP"],
     },
-    "Comansegur - Seguranca Privada, S.A.": {
+    "Comansegur - Segurança Privada, S.A.": {
         "nipc": "503727260",
-        "cct": "CCT AESIRF / FETESE",
+        "ccts_sugeridos": ["CCT AESIRF / FETESE", "CCT AESIRF / SUSP"],
     },
-    "Grupo 8 - Vigilancia e Prevencao Eletronica, Lda.": {
+    "Grupo 8 - Vigilância e Prevenção Eletrónica, Lda.": {
         "nipc": "501279880",
-        "cct": "CCT AES / STAD",
+        "ccts_sugeridos": ["CCT AES / STAD", "CCT AES / ASSP"],
     },
-    "Outra Empresa (Abrangida por Portaria de Extensao)": {
+    "Loomis Portugal, S.A.": {
+        "nipc": "500965284",
+        "ccts_sugeridos": ["CCT AES / STAD", "CCT AES / ASSP"],
+    },
+    "Prosegur Cash, S.A.": {
+        "nipc": "513322921",
+        "ccts_sugeridos": ["CCT AES / STAD", "CCT AES / ASSP"],
+    },
+    "Outra Empresa (Abrangida por Portaria de Extensão)": {
         "nipc": "000000000",
-        "cct": "Portaria de Extensao (CCT Setorial)",
+        "ccts_sugeridos": ["Portaria de Extensão (CCT Setorial)", "CCT AES / STAD", "CCT AESIRF / FETESE"],
     },
 }
 
 DISTRITOS_PORTUGAL = [
-    "Aveiro", "Beja", "Braga", "Braganca", "Castelo Branco", "Coimbra",
-    "Evora", "Faro", "Guarda", "Leiria", "Lisboa", "Portalegre",
-    "Porto", "Santarem", "Setubal", "Viana do Castelo", "Vila Real",
-    "Viseu", "R.A. Acores", "R.A. Madeira"
+    "Aveiro", "Beja", "Braga", "Bragança", "Castelo Branco", "Coimbra",
+    "Évora", "Faro", "Guarda", "Leiria", "Lisboa", "Portalegre",
+    "Porto", "Santarém", "Setúbal", "Viana do Castelo", "Vila Real",
+    "Viseu", "R.A. Açores", "R.A. Madeira"
 ]
 
 TIPOS_INCUMPRIMENTO = [
+    "Trabalho Suplementar (Horas Extras) não pago ou acumulado",
     "Horas Noturnas (21h-06h) mal pagas ou omitidas",
-    "Trabalho Suplementar (Horas Extras) nao pago",
-    "Trabalho em Dia Feriado nao remunerado corretamente",
-    "Mudanca de Posto sem aviso previo legal (Art. 194. CT)",
-    "Alteracao de Escala em cima da hora (Art. 217. CT)",
-    "Pressao na Transmissao de Estabelecimento (Art. 285. CT)",
-    "Falta de Formacao Continua Obrigatoria (Art. 131. CT)",
-    "Desconto ilegal de Fardamento ou Cartao MAI",
-    "Atraso no pagamento de Retribuicao / Subsidios",
+    "Trabalho em Dia Feriado não remunerado corretamente",
+    "Falta de pagamento de Horas de Formação realizadas",
+    "Falta de Horas de Formação Obrigatória (40h/ano - Art. 131.º CT)",
+    "Mudança de Posto sem aviso prévio legal (Art. 194.º CT)",
+    "Alteração de Escala em cima da hora (Art. 217.º CT)",
+    "Pressão ou corte de antiguidade na Transmissão de Estabelecimento (Art. 285.º CT)",
+    "Desconto ilegal de Fardamento, Calçado ou Cartão MAI",
+    "Atraso no pagamento de Retribuição ou Subsídios",
+    "Falta de pagamento de Despesas de Deslocação / Km",
 ]
 
-# Tabelas salariais de referencia por ano e CCT (Categoria: Vigilante)
-# Atualiza estes valores sempre que sair nova tabela no BTE
-TABELAS_CCT = {
-    "CCT AES / STAD": {
-        2023: {"base": 838.44, "sub_alim_dia": 6.40, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_1h_pct": 0.25, "extra_seg_pct": 0.375},
-        2024: {"base": 892.94, "sub_alim_dia": 6.80, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_1h_pct": 0.25, "extra_seg_pct": 0.375},
-        2025: {"base": 942.05, "sub_alim_dia": 7.15, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_1h_pct": 0.25, "extra_seg_pct": 0.375},
-        2026: {"base": 985.00, "sub_alim_dia": 7.45, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_1h_pct": 0.25, "extra_seg_pct": 0.375},
-    },
-    "CCT AESIRF / FETESE": {
-        2023: {"base": 835.00, "sub_alim_dia": 6.35, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_1h_pct": 0.25, "extra_seg_pct": 0.375},
-        2024: {"base": 890.00, "sub_alim_dia": 6.75, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_1h_pct": 0.25, "extra_seg_pct": 0.375},
-        2025: {"base": 938.50, "sub_alim_dia": 7.10, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_1h_pct": 0.25, "extra_seg_pct": 0.375},
-        2026: {"base": 980.00, "sub_alim_dia": 7.40, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_1h_pct": 0.25, "extra_seg_pct": 0.375},
-    },
-    "Portaria de Extensao (CCT Setorial)": {
-        2023: {"base": 835.00, "sub_alim_dia": 6.35, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_1h_pct": 0.25, "extra_seg_pct": 0.375},
-        2024: {"base": 890.00, "sub_alim_dia": 6.75, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_1h_pct": 0.25, "extra_seg_pct": 0.375},
-        2025: {"base": 938.50, "sub_alim_dia": 7.10, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_1h_pct": 0.25, "extra_seg_pct": 0.375},
-        2026: {"base": 980.00, "sub_alim_dia": 7.40, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_1h_pct": 0.25, "extra_seg_pct": 0.375},
-    },
+# Tabelas salariais de referência por ano e CCT (Categoria: Vigilante)
+# Atualiza estes valores sempre que sair nova tabela no Boletim do Trabalho e Emprego (BTE)
+_REGRAS_BASE_ANO = {
+    2023: {"base": 838.44, "sub_alim_dia": 6.40, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_pct": 0.375},
+    2024: {"base": 892.94, "sub_alim_dia": 6.80, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_pct": 0.375},
+    2025: {"base": 942.05, "sub_alim_dia": 7.15, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_pct": 0.375},
+    2026: {"base": 985.00, "sub_alim_dia": 7.45, "noturno_pct": 0.25, "feriado_pct": 1.00, "extra_pct": 0.375},
 }
 
+TABELAS_CCT = {cct: _REGRAS_BASE_ANO for cct in TODOS_CCTS}
 
-def obter_enquadramento(empresa: str, ano: int) -> dict:
-    info_empresa = EMPRESAS_SEGURANCA.get(
-        empresa, {"nipc": "000000000", "cct": "Portaria de Extensao (CCT Setorial)"}
+
+def obter_sugestoes_cct(empresa: str) -> tuple[str, list]:
+    info = EMPRESAS_SEGURANCA.get(
+        empresa,
+        {"nipc": "000000000", "ccts_sugeridos": ["Portaria de Extensão (CCT Setorial)"]},
     )
-    cct_nome = info_empresa["cct"]
-    ano_ref = max(2023, min(2026, ano))
-    regras = TABELAS_CCT[cct_nome][ano_ref]
+    sugeridos = info["ccts_sugeridos"]
+    lista_ordenada = sugeridos + [c for c in TODOS_CCTS if c not in sugeridos]
+    return info["nipc"], lista_ordenada
 
-    # Formula legal do valor hora: (Retribuicao Base * 12) / (52 semanas * 40 horas)
+
+def obter_enquadramento(empresa: str, ano: int, cct_escolhido: str) -> dict:
+    nipc, _ = obter_sugestoes_cct(empresa)
+    ano_ref = max(2023, min(2026, ano))
+    regras = TABELAS_CCT[cct_escolhido][ano_ref]
+
+    # Fórmula legal do valor hora: (Retribuição Base * 12) / (52 semanas * 40 horas)
     valor_hora = round((regras["base"] * 12) / (52 * 40), 4)
 
     return {
-        "nipc": info_empresa["nipc"],
-        "cct": cct_nome,
+        "nipc": nipc,
+        "cct": cct_escolhido,
         "ano_aplicado": ano_ref,
         "valor_hora": valor_hora,
         **regras,
     }
 
 
-def calcular_auditoria_mensal(
+def calcular_auditoria_periodo(
     empresa: str,
     ano: int,
-    horas_noturnas_reais: float,
-    horas_feriado_reais: float,
-    horas_extras_reais: float,
-    dias_trabalhados: int,
-    base_pago: float,
-    noturno_pago: float,
-    feriado_pago: float,
-    extras_pago: float,
-    alim_pago: float,
+    cct_escolhido: str,
+    num_meses: int,
+    horas_noturnas_totais: float,
+    horas_feriado_totais: float,
+    horas_extras_totais: float,
+    horas_formacao_nao_pagas: float,
+    dias_trabalhados_totais: int,
+    base_pago_total: float,
+    noturno_pago_total: float,
+    feriado_pago_total: float,
+    extras_pago_total: float,
+    formacao_pago_total: float,
+    alim_pago_total: float,
 ) -> dict:
-    regras = obter_enquadramento(empresa, ano)
+    regras = obter_enquadramento(empresa, ano, cct_escolhido)
     vh = regras["valor_hora"]
 
-    base_devido = regras["base"]
-    noturno_devido = round(horas_noturnas_reais * vh * regras["noturno_pct"], 2)
-    feriado_devido = round(horas_feriado_reais * vh * regras["feriado_pct"], 2)
-    extras_devido = round(horas_extras_reais * vh * (1 + regras["extra_seg_pct"]), 2)
-    alim_devido = round(dias_trabalhados * regras["sub_alim_dia"], 2)
+    base_devido = round(regras["base"] * num_meses, 2)
+    noturno_devido = round(horas_noturnas_totais * vh * regras["noturno_pct"], 2)
+    feriado_devido = round(horas_feriado_totais * vh * regras["feriado_pct"], 2)
+    extras_devido = round(horas_extras_totais * vh * (1 + regras["extra_pct"]), 2)
+    formacao_devido = round(horas_formacao_nao_pagas * vh, 2)
+    alim_devido = round(dias_trabalhados_totais * regras["sub_alim_dia"], 2)
 
     total_devido = round(
-        base_devido + noturno_devido + feriado_devido + extras_devido + alim_devido, 2
+        base_devido + noturno_devido + feriado_devido + extras_devido + formacao_devido + alim_devido,
+        2,
     )
     total_pago = round(
-        base_pago + noturno_pago + feriado_pago + extras_pago + alim_pago, 2
+        base_pago_total + noturno_pago_total + feriado_pago_total + extras_pago_total + formacao_pago_total + alim_pago_total,
+        2,
     )
     desvio_total = round(total_devido - total_pago, 2)
 
     detalhes = [
         {
-            "rubrica": "Retribuicao Base",
-            "devido": base_devido,
-            "pago": base_pago,
-            "diferenca": round(base_devido - base_pago, 2),
+            "Rubrica": f"Retribuição Base ({num_meses} mês/meses)",
+            "Devido (EUR)": base_devido,
+            "Pago (EUR)": base_pago_total,
+            "Diferença (EUR)": round(base_devido - base_pago_total, 2),
         },
         {
-            "rubrica": f"Acrescimo Noturno ({int(regras['noturno_pct']*100)}%)",
-            "devido": noturno_devido,
-            "pago": noturno_pago,
-            "diferenca": round(noturno_devido - noturno_pago, 2),
+            "Rubrica": f"Acréscimo Noturno ({int(regras['noturno_pct']*100)}%)",
+            "Devido (EUR)": noturno_devido,
+            "Pago (EUR)": noturno_pago_total,
+            "Diferença (EUR)": round(noturno_devido - noturno_pago_total, 2),
         },
         {
-            "rubrica": f"Trabalho em Feriado (+{int(regras['feriado_pct']*100)}%)",
-            "devido": feriado_devido,
-            "pago": feriado_pago,
-            "diferenca": round(feriado_devido - feriado_pago, 2),
+            "Rubrica": f"Trabalho em Feriado (+{int(regras['feriado_pct']*100)}%)",
+            "Devido (EUR)": feriado_devido,
+            "Pago (EUR)": feriado_pago_total,
+            "Diferença (EUR)": round(feriado_devido - feriado_pago_total, 2),
         },
         {
-            "rubrica": "Trabalho Suplementar (Horas Extras)",
-            "devido": extras_devido,
-            "pago": extras_pago,
-            "diferenca": round(extras_devido - extras_pago, 2),
+            "Rubrica": "Trabalho Suplementar (Horas Extras)",
+            "Devido (EUR)": extras_devido,
+            "Pago (EUR)": extras_pago_total,
+            "Diferença (EUR)": round(extras_devido - extras_pago_total, 2),
         },
         {
-            "rubrica": "Subsidio de Alimentacao",
-            "devido": alim_devido,
-            "pago": alim_pago,
-            "diferenca": round(alim_devido - alim_pago, 2),
+            "Rubrica": "Horas de Formação (Art. 131.º CT)",
+            "Devido (EUR)": formacao_devido,
+            "Pago (EUR)": formacao_pago_total,
+            "Diferença (EUR)": round(formacao_devido - formacao_pago_total, 2),
+        },
+        {
+            "Rubrica": "Subsídio de Alimentação",
+            "Devido (EUR)": alim_devido,
+            "Pago (EUR)": alim_pago_total,
+            "Diferença (EUR)": round(alim_devido - alim_pago_total, 2),
         },
     ]
 
     return {
         "regras": regras,
+        "num_meses": num_meses,
         "total_devido": total_devido,
         "total_pago": total_pago,
         "desvio_total": desvio_total,
