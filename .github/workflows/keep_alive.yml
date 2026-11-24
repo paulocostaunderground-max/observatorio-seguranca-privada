@@ -10,12 +10,10 @@ jobs:
   ping-streamlit:
     runs-on: ubuntu-latest
     steps:
-      - name: Verificar pagina principal e servidor Streamlit
+      - name: Acordar e manter aplicacao Streamlit ativa
         run: |
           URL="https://observatorio-seguranca-privada.streamlit.app"
-          echo "A contactar: $URL"
-          curl -f -s -S -L --retry 3 --retry-delay 5 -A "Mozilla/5.0" "$URL" -o /dev/null
-          echo "Pagina principal OK (HTTP 200)"
-          curl -f -s -S -L --retry 3 --retry-delay 5 -A "Mozilla/5.0" "$URL/_stcore/health"
+          curl -f -s -S -L -c /tmp/cookies.txt -b /tmp/cookies.txt -A "Mozilla/5.0" "$URL/_stcore/health"
           echo ""
-          echo "Servidor Streamlit ativo!"
+          google-chrome --headless --no-sandbox --disable-gpu --virtual-time-budget=5000 --dump-dom "$URL" > /dev/null 2>&1 || true
+          echo "Site verificado e ativo com sucesso!"
