@@ -10,30 +10,12 @@ jobs:
   ping-streamlit:
     runs-on: ubuntu-latest
     steps:
-      - name: Enviar pedido HTTP para manter a app acordada
-        env:
-          APP_URL: ${{ secrets.STREAMLIT_APP_URL }}
+      - name: Verificar pagina principal e servidor Streamlit
         run: |
-          python3 -c '
-          import os, re, time, urllib.parse, urllib.request
-          raw = os.environ.get("APP_URL", "").strip()
-          match = re.search(r"https?://[^\s\]\)\"]+", raw)
-          if not match:
-              print("Erro: URL valido nao encontrado no Secret STREAMLIT_APP_URL.")
-              exit(1)
-          url = match.group(0)
-          dominio = urllib.parse.urlparse(url).netloc
-          print("Dominio extraido do Secret:", dominio)
-
-          for tentativa in range(1, 4):
-              try:
-                  req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 KeepAliveBot"})
-                  with urllib.request.urlopen(req, timeout=30) as resp:
-                      print("Sucesso! Estado HTTP:", resp.status)
-                      exit(0)
-              except Exception as erro:
-                  print(f"Tentativa {tentativa} falhou: {erro}")
-                  if tentativa < 3:
-                      time.sleep(5)
-          exit(1)
-          '
+          URL="https://https://observatorio-seguranca-privada.streamlit.app/"
+          echo "A contactar: $URL"
+          curl -f -s -S -L --retry 3 --retry-delay 5 -A "Mozilla/5.0" "$URL" -o /dev/null
+          echo "Pagina principal OK (HTTP 200)"
+          curl -f -s -S -L --retry 3 --retry-delay 5 -A "Mozilla/5.0" "$URL/_stcore/health"
+          echo ""
+          echo "Servidor Streamlit ativo!"
