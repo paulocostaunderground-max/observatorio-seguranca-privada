@@ -6,12 +6,11 @@ import pandas as pd
 import streamlit as st
 from pypdf import PdfReader
 
+import cct_engine
 from cct_engine import (
     CATEGORIAS_PROFISSIONAIS,
     DISTRITOS_PORTUGAL,
     EMPRESAS_SEGURANCA,
-    ESTADOS_CASO_SINDICAL,
-    SINDICATOS_SETOR,
     TIPOS_INCUMPRIMENTO,
     calcular_auditoria_periodo,
     obter_enquadramento,
@@ -19,6 +18,31 @@ from cct_engine import (
     validar_nipc_portugues,
 )
 from pdf_generator import gerar_pdf_auditoria, gerar_pdf_ocorrencia
+
+SINDICATOS_SETOR = getattr(
+    cct_engine,
+    "SINDICATOS_SETOR",
+    [
+        "STAD - Sindicato dos Trabalhadores de Serviços de Portaria, Vigilância, Limpeza",
+        "ASSP - Associação Sindical da Segurança Privada",
+        "FETESE - Federação dos Sindicatos da Indústria e Serviços",
+        "SUSP - Sindicato Único da Segurança Privada",
+        "SINDETELCO - Sindicato Democrático dos Trabalhadores das Comunicações e dos Media",
+        "SINAPSA - Sindicato Nacional dos Profissionais de Seguros e Afins",
+        "Outro Sindicato do Setor",
+    ],
+)
+
+ESTADOS_CASO_SINDICAL = getattr(
+    cct_engine,
+    "ESTADOS_CASO_SINDICAL",
+    [
+        "Problema Resolvido com Sucesso (Acordo ou Tribunal)",
+        "Em Curso / Com Acompanhamento Jurídico Ativo",
+        "Apenas Sócio Preventivo (Ainda sem necessidade de apoio)",
+        "Sem Resposta / Apoio Ineficaz",
+    ],
+)
 
 LIMIAR_GRUPO_COLETIVO = 10
 
