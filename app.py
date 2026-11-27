@@ -101,7 +101,7 @@ st.markdown(
     padding-left: {pad_side_css};
     padding-right: {pad_side_css};
 }}
-/* FAIXA ANIMADA SUPERIOR */
+/* FAIXA ANIMADA SUPERIOR (VELOCIDADE SUAVE) */
 .ticker-wrap {{
     width: 100%;
     overflow: hidden;
@@ -117,7 +117,7 @@ st.markdown(
     display: inline-block;
     white-space: nowrap;
     padding-left: 100%;
-    animation: ticker-scroll 26s linear infinite;
+    animation: ticker-scroll 52s linear infinite;
     font-weight: 600;
     font-size: 0.92rem;
     letter-spacing: 0.02em;
@@ -201,13 +201,19 @@ st.markdown(
     border-radius: 12px;
     margin-bottom: 1.15rem;
     box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
-    line-height: 1.55;
+    line-height: 1.58;
 }}
 .guide-card h3 {{
     color: #0F172A;
     margin-top: 0;
     margin-bottom: 0.65rem;
     font-size: 1.14rem;
+}}
+.guide-card h4 {{
+    color: #0F172A;
+    margin-top: 0.9rem;
+    margin-bottom: 0.35rem;
+    font-size: 1.01rem;
 }}
 .rule-highlight {{
     background-color: #F1F5F9;
@@ -273,7 +279,7 @@ st.markdown(
         font-size: 1.28rem;
     }}
     .ticker-move {{
-        animation-duration: 18s;
+        animation-duration: 36s;
     }}
 }}
 </style>
@@ -446,7 +452,6 @@ def validar_comprovativo_sindical_em_memoria(ficheiro_bytes: bytes) -> dict:
         texto_lower = texto_total.lower()
         salt = obter_salt_segredo()
 
-        # 1. Verifica primeiro se é um recibo de vencimento (com ou sem desconto direto na folha)
         res_recibo = validar_recibo_em_memoria(ficheiro_bytes, None)
         if res_recibo["valido"]:
             metodo = (
@@ -461,7 +466,6 @@ def validar_comprovativo_sindical_em_memoria(ficheiro_bytes: bytes) -> dict:
                 "metodo_validacao": metodo,
             }
 
-        # 2. Aceita comprovativos bancários, SEPA, MB Way, recibos de quota ou declarações de IRS
         marcadores_comprovativo = [
             "quota", "quotização", "quotizacao", "sindicato", "sindical",
             "débito direto", "debito direto", "sepa", "autorização", "autorizacao",
@@ -691,7 +695,7 @@ aba1, aba2, aba3, aba4, aba5, aba6 = st.tabs(
         "3. Ranking Empresas",
         "4. Ranking Sindicatos",
         "5. Ação Coletiva",
-        "6. Guia Legal & Sugestões",
+        "6. Guia Legal, FAQ & Sugestões",
     ]
 )
 
@@ -1235,41 +1239,183 @@ with aba5:
 
 
 # ==============================================================================
-# ABA 6: GUIA LEGAL DO VIGILANTE & SUGESTÕES ANÓNIMAS
+# ABA 6: GUIA LEGAL COMPLETO, FAQ & CAIXA DE SUGESTÕES ANÓNIMAS
 # ==============================================================================
 with aba6:
-    st.subheader("Guia de Defesa Laboral do Vigilante & Caixa de Sugestões")
+    st.subheader("Enciclopédia Prática de Direitos do Vigilante, FAQ & Sugestões")
+    st.write(
+        "Consulta abaixo o enquadramento legal completo aplicável à Segurança Privada em Portugal "
+        "(Código do Trabalho, Contratos Coletivos de Trabalho publicados em BTE e Lei n.º 34/2013)."
+    )
 
+    # 1. BLOCO DE REMUNERAÇÃO E ACRÉSCIMOS
     st.markdown(
         """
 <div class="guide-card">
-<h3>1. Literacia Laboral: Os 4 Pilares de Defesa do Vigilante</h3>
-<p>O maior aliado do incumprimento é o isolamento entre postos e a falta de documentação. Quando conheces os teus direitos e guardas prova cronológica, passas de alvo isolado a trabalhador protegido pela lei.</p>
-
+<h3>1. Remuneração, Cálculo do Valor Hora e Acréscimos Obrigatórios (CCT &amp; BTE)</h3>
+<p>Na Segurança Privada, a fórmula oficial para apurar o <strong>Valor Hora Base (VH)</strong> a partir do vencimento mensal de tabela é:</p>
 <div class="rule-highlight">
-<strong>Pilar 1 — Conferência Salarial (CCT &amp; BTE):</strong><br>
-• <strong>Horas Noturnas (21h00 às 06h00):</strong> Têm acréscimo mínimo obrigatório de <strong>+25%</strong> sobre o valor hora base.<br>
-• <strong>Trabalho Suplementar:</strong> +50% na hora diurna (1,50x) e +75% na hora noturna (1,75x).<br>
-• <strong>Feriados e Descanso Semanal:</strong> Acréscimo de +100% em dia normal de escala ou 200% em dia de folga/descanso.<br>
-• <strong>Formação Obrigatória (Art. 131.º Código do Trabalho):</strong> Direito a <strong>40 horas anuais</strong> de formação contínua. Horas não ministradas vencem-se e convertem-se em crédito de horas retribuído.
+<strong>Fórmula Oficial CCT:</strong> <code>Valor Hora = (Retribuição Base Mensal × 12 meses) ÷ (52 semanas × 40 horas)</code><br>
+<em>Exemplo Prático (Vigilante Nível XIX em 2026 — Base 1.015,95 EUR):</em> <code>(1.015,95 × 12) ÷ 2.080 = 5,8613 EUR/hora</code>.
 </div>
+<ul>
+<li><strong>Trabalho Noturno (21h00 às 06h00):</strong> Nos CCT da Segurança Privada, o período noturno começa às <strong>21h00</strong> (mais favorável do que o regime geral do Código do Trabalho que começa às 22h00) e termina às 06h00. Cada hora trabalhada neste intervalo vence um acréscimo mínimo de <strong>+25%</strong> (<code>1,25 × VH</code>).</li>
+<li><strong>Trabalho Suplementar (Horas Extras):</strong> Todo o trabalho prestado fora do horário normal de trabalho ou acima do limite semanal/adaptabilidade definido vence:
+    <ul>
+    <li><strong>Hora Extra Diurna (06h00 às 21h00):</strong> Acréscimo de <strong>+50%</strong> (<code>1,50 × VH</code>).</li>
+    <li><strong>Hora Extra Noturna (21h00 às 06h00):</strong> Acréscimo de <strong>+75%</strong> (<code>1,75 × VH</code>).</li>
+    </ul>
+</li>
+<li><strong>Trabalho em Dia Feriado e Descanso Semanal:</strong>
+    <ul>
+    <li><strong>Feriado em dia normal de escala (laboração contínua):</strong> Direito ao acréscimo de <strong>+100%</strong> sobre o valor hora normal (ou descanso compensatório equivalente nos termos do Art. 269.º do Código do Trabalho e CCT).</li>
+    <li><strong>Trabalho Suplementar em Dia de Descanso Semanal ou Feriado fora de escala:</strong> Pagamento a <strong>200% (acréscimo de +100%)</strong> e, caso seja prestado em dia de descanso semanal obrigatório, direito a <strong>1 dia completo de descanso compensatório remunerado</strong> a gozar nos 3 dias úteis seguintes (Art. 229.º CT).</li>
+    </ul>
+</li>
+<li><strong>Subsídio de Alimentação:</strong> Pago por cada dia efetivo de trabalho (ou turno completo conforme escala). Em 2026, o valor mínimo setorial para Vigilante (Nível XIX) é de <strong>7,85 EUR/dia</strong>.</li>
+</ul>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
 
+    # 2. BLOCO DE HORÁRIOS, ESCALAS E DESCANSO
+    st.markdown(
+        """
+<div class="guide-card">
+<h3>2. Organização do Tempo de Trabalho, Escalas e Descanso Obrigatório</h3>
+<ul>
+<li><strong>Alteração de Escala / Horário (Art. 217.º Código do Trabalho):</strong> A escala de serviço não pode ser alterada arbitrariamente de um dia para o outro. Qualquer alteração de horário de trabalho deve ser precedida de consulta aos trabalhadores envolvidos e afixada com antecedência mínima de <strong>7 dias</strong> (ou 3 dias em microempresas), salvo acordo expresso do trabalhador ou situação de força maior devidamente comprovada.</li>
+<li><strong>Descanso Diário Mínimo Entre Turnos (Art. 214.º Código do Trabalho):</strong> O trabalhador tem direito a um período mínimo de descanso de <strong>11 horas seguidas</strong> entre dois períodos diários de trabalho consecutivos. É ilegal escalar um vigilante para sair às 20h00 e entrar às 06h00 do dia seguinte sem intervalo legal.</li>
+<li><strong>Turnos Contínuos e Pausa para Refeição (Art. 213.º CT e CCT):</strong> Nos postos de vigilância permanente (turnos de 8h ou 12h) em que o vigilante não pode abandonar o posto nem é rendido para almoçar/jantar, o período de refeição considera-se tempo de trabalho efetivo e é remunerado.</li>
+<li><strong>Limites ao Trabalho Suplementar (Art. 228.º CT):</strong> O trabalhador pode recusar trabalho suplementar quando existam motivos atendíveis (Art. 227.º, n.º 3 CT) ou quando ultrapasse os limites anuais legais (150h a 200h por ano conforme dimensão da empresa e CCT).</li>
+</ul>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # 3. BLOCO DE TRANSMISSÃO DE ESTABELECIMENTO E MUDANÇA DE POSTO
+    st.markdown(
+        """
+<div class="guide-card">
+<h3>3. Transmissão de Estabelecimento (Perda de Cliente) e Mudança de Posto</h3>
 <div class="rule-highlight">
-<strong>Pilar 2 — Escalas, Postos e Transmissão de Estabelecimento:</strong><br>
-• <strong>Alteração de Escala (Art. 217.º CT):</strong> Deve ser comunicada com antecedência mínima legal (regra geral 7 dias), salvo acordo ou motivo de força maior devidamente justificado.<br>
-• <strong>Mudança de Local de Trabalho (Art. 194.º CT):</strong> Exige aviso prévio por escrito e pagamento de acréscimo de despesas de deslocação quando exista prejuízo sério.<br>
-• <strong>Perda/Ganho de Cliente (Art. 285.º CT):</strong> Na transmissão de estabelecimento ou unidade económica, manténs integralmente a tua antiguidade, categoria e retribuição. Nunca assines rescisões nem novos contratos com perda de direitos sem consulta jurídica.
+<strong>Regra de Ouro na Mudança de Empresa no Cliente (Arts. 285.º a 287.º CT e CCT):</strong><br>
+Quando uma empresa de segurança perde um cliente/posto e outra empresa ganha o concurso mantendo a vigilância do local, verifica-se uma <strong>transmissão de unidade económica</strong>. A empresa que entra é obrigada a assumir os vigilantes afetos ao posto com <strong>manutenção integral da antiguidade, categoria profissional, retribuição, direito a férias e créditos vencidos</strong>.
 </div>
+<ul>
+<li><strong>Cuidado com Documentos na Transmissão:</strong> Nunca assines cartas de demissão, rescisões por mútuo acordo nem novos contratos com período experimental ou perda de antiguidade quando mudas de empresa no mesmo posto. Exige sempre cópia assinada e datada de qualquer comunicação.</li>
+<li><strong>Mudança de Local de Trabalho / Transferência de Posto (Art. 194.º CT):</strong> A empresa só pode transferir o vigilante para outro local de trabalho fora da área geográfica definida no contrato se houver fundamento objetivo, mediante comunicação escrita com <strong>8 dias de antecedência</strong> (transferência temporária) ou <strong>30 dias</strong> (transferência definitiva).</li>
+<li><strong>Pagamento de Despesas de Deslocação:</strong> Sempre que a mudança de posto aumente os custos de transporte ou o tempo de deslocação causando prejuízo sério, a entidade empregadora é obrigada por lei (Art. 194.º, n.º 4 CT) a custear o acréscimo das despesas de deslocação.</li>
+</ul>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
 
+    # 4. BLOCO DE FORMAÇÃO, FARDAMENTO, CARTÃO MAI E PRAZOS LEGAIS
+    st.markdown(
+        """
+<div class="guide-card">
+<h3>4. Formação Obrigatória, Fardamento, Videovigilância e Prazos Legais</h3>
+<ul>
+<li><strong>Formação Contínua Obrigatória (Arts. 131.º e 132.º CT):</strong> Todo o vigilante tem direito a um mínimo de <strong>40 horas anuais</strong> de formação certificada (ou proporcional no ano de admissão/cessação). Se a empresa não assegurar a formação até ao fim dos 2 anos posteriores ao seu vencimento, essas horas transformam-se num <strong>crédito de horas</strong> que o trabalhador pode usar ou exigir o respetivo pagamento na cessação do contrato.</li>
+<li><strong>Fardamento e Equipamento (Lei n.º 34/2013 e CCT):</strong> O fornecimento e substituição de fardamento (incluindo calçado adequado e agasalhos para postos exteriores) é encargo exclusivo da empresa. É <strong>ilegal descontar o custo do fardamento no ordenado</strong>, salvo se o trabalhador não o devolver no fim do contrato ou o danificar intencionalmente.</li>
+<li><strong>Videovigilância no Posto de Trabalho (Art. 20.º CT e RGPD):</strong> As câmaras CCTV servem exclusivamente para proteção de pessoas e bens. A empresa não pode utilizar imagens de videovigilância para controlar o rendimento laboral do vigilante nem captar som sem autorização legal expressa.</li>
+</ul>
 <div class="warning-highlight">
-<strong>Pilar 3 — Prazos de Prescrição (Art. 337.º Código do Trabalho):</strong><br>
-Todos os créditos laborais (horas extras, noturnas, subsídios ou formação em falta) prescrevem decorrido <strong>1 ano a partir do dia seguinte àquele em que cessou o contrato de trabalho</strong>. Enquanto estiveres ao serviço da empresa, o prazo de prescrição não corre — mas quanto mais cedo documentares e reclamares por escrito, mais sólida é a prova.
+<strong>Atenção aos Dois Prazos Legais Mais Importantes:</strong><br>
+1. <strong>Reclamação de Salários, Horas Extras, Noturnas e Formação (Art. 337.º CT):</strong> Todos os créditos laborais prescrevem decorrido <strong>1 ano a partir do dia seguinte ao da cessação do contrato</strong>. Enquanto estás a trabalhar na empresa, o prazo não corre, mas deves guardar provas todos os meses.<br>
+2. <strong>Impugnação de Despedimento (Art. 387.º CT):</strong> Se fores alvo de despedimento (com justa causa, extinção de posto ou despedimento ilícito), tens apenas <strong>60 dias seguidos</strong> para entregar o formulário de impugnação no Tribunal do Trabalho. Se deixares passar os 60 dias, perdes o direito de impugnar o despedimento!
 </div>
 </div>
         """,
         unsafe_allow_html=True,
     )
 
+    # 5. PERGUNTAS FREQUENTES (FAQ INTERATIVO)
+    st.markdown("### Perguntas Frequentes (FAQ) — Casos Reais do Dia a Dia")
+
+    with st.expander("1. A chefia mandou-me uma mensagem por WhatsApp às 22h00 a mudar o turno de amanhã. Sou obrigado a aceitar?"):
+        st.write(
+            "Regra geral, **não**. Nos termos do Art. 217.º do Código do Trabalho, qualquer alteração de horário de trabalho "
+            "tem de ser comunicada com antecedência mínima de **7 dias** (ou 3 dias em microempresa), salvo acordo expresso "
+            "do trabalhador ou motivo de força maior devidamente justificado. Guarda sempre captura de ecrã da escala original "
+            "e da mensagem recebida com data e hora visíveis."
+        )
+
+    with st.expander("2. Fiz um turno de 12 horas seguidas (ex.: 20h00 às 08h00). Como devem ser pagas essas horas?"):
+        st.write(
+            "Num turno das 20h00 às 08h00 existem dois cálculos distintos: "
+            "**(a) Acréscimo Noturno (+25%):** Todas as horas trabalhadas entre as **21h00 e as 06h00** (9 horas neste turno) têm de ter "
+            "um acréscimo mínimo de +25%, mesmo que façam parte do teu horário normal. "
+            "**(b) Trabalho Suplementar:** As horas que excedam a tua carga horária normal (ex.: as 4 horas acima de um turno normal de 8h, "
+            "caso não estejas em regime de adaptabilidade/banco de horas válido) têm de ser pagas com acréscimo de **+50% se diurnas** "
+            "ou **+75% se noturnas**."
+        )
+
+    with st.expander("3. A minha empresa perdeu o cliente onde trabalho e a nova empresa quer que eu assine um contrato novo do zero. O que devo fazer?"):
+        st.write(
+            "**Não assines nenhuma carta de demissão nem contratos que anulem a tua antiguidade.** Por força dos artigos 285.º a 287.º "
+            "do Código do Trabalho e das cláusulas de transmissão nos CCT da segurança privada, a nova empresa que assume o posto "
+            "recebe o teu contrato tal como está, mantendo a tua data de admissão original, categoria e retribuição. Pede sempre uma cópia "
+            "do documento antes de assinar e consulta o teu sindicato ou a ACT."
+        )
+
+    with st.expander("4. Nunca me deram as 40 horas anuais de formação nos últimos anos. Perdi esse direito?"):
+        st.write(
+            "**Não perdeste.** De acordo com os artigos 131.º e 132.º do Código do Trabalho, tens direito a 40 horas de formação "
+            "contínua por ano. Quando a empresa não ministra essa formação, as horas vencidas convertem-se em **crédito de horas** "
+            "que podes utilizar para formação por tua iniciativa ou exigir o respetivo pagamento em dinheiro quando o contrato terminar "
+            "(dentro do prazo de 1 ano após a saída)."
+        )
+
+    with st.expander("5. Transferiram-me para um posto a 45 km de casa sem me pagarem deslocação. É legal?"):
+        st.write(
+            "Se o novo posto fica fora da área geográfica prevista no teu contrato ou causa prejuízo sério (acréscimo relevante de custos "
+            "de combustível/transportes e tempo de viagem), a empresa é obrigada pelo **Art. 194.º, n.º 4 do Código do Trabalho** a "
+            "pagar o acréscimo das despesas de deslocação e a notificar-te por escrito com antecedência legal (8 ou 30 dias). "
+            "Regista a distância exata pelo Google Maps e guarda os comprovativos de combustível ou passes."
+        )
+
+    with st.expander("6. Podem descontar-me o valor do fardamento, botas ou cartão MAI no recibo de vencimento?"):
+        st.write(
+            "**Não.** O equipamento de trabalho e fardamento obrigatório são encargos da entidade empregadora. Só pode haver "
+            "desconto ou indemnização se o trabalhador não devolver a farda quando sai da empresa ou se a destruir propositadamente. "
+            "Qualquer desconto unilateral no salário sem autorização legal constitui retenção ilícita de retribuição."
+        )
+
+    with st.expander("7. Como posso saber qual é o CCT que se aplica ao meu contrato?"):
+        st.write(
+            "Verifica o teu contrato de trabalho individual ou o cabeçalho/rodapé do teu recibo de vencimento — muitas empresas indicam "
+            "a convenção aplicada (ex.: CCT AES/STAD, CCT AES/ASSP, CCT AESIRF/SUSP ou CCT AESIRF/FETESE). Caso não esteja escrito, "
+            "aplica-se a **Portaria de Extensão** em vigor para o setor da vigilância privada, cujas tabelas salariais mínimas são "
+            "idênticas às publicadas no Boletim do Trabalho e Emprego (BTE)."
+        )
+
+    with st.expander("8. Até quando posso reclamar horas extras ou horas noturnas de anos anteriores?"):
+        st.write(
+            "Pelo **Art. 337.º do Código do Trabalho**, enquanto o teu contrato de trabalho estiver em vigor, os créditos salariais "
+            "**não prescrevem** (podes reclamar diferenças de há 2, 3 ou 5 anos atrás, desde que tenhas prova documental como recibos "
+            "e escalas). Depois de saíres da empresa, tens **1 ano completo** para intentar ação judicial ou reclamar formalmente."
+        )
+
+    with st.expander("9. Como funciona a privacidade 'Custódia Zero' deste site? A minha empresa pode saber que usei a ferramenta?"):
+        st.write(
+            "**É tecnicamente impossível identificarem-te.** O site não pede nome, email, telefone nem cria contas. Não guardamos "
+            "endereços IP e os ficheiros PDF que carregas são lidos apenas na memória temporária (RAM) durante milissegundos para "
+            "validar a autenticidade e apagados de imediato. Podes ainda rasurar o teu nome e morada no PDF antes de o carregar."
+        )
+
+    with st.expander("10. Pago a quota sindical por débito direto e não aparece no recibo de vencimento. Posso avaliar o meu sindicato na Aba 4?"):
+        st.write(
+            "**Sim, perfeitamente.** A Aba 4 aceita tanto recibos de vencimento (com ou sem desconto na folha) como comprovativos "
+            "de débito direto (SEPA), transferências bancárias, recibos de quota ou declarações anuais de IRS. Todos os vigilantes "
+            "sindicalizados têm exatamente o mesmo peso e voz no ranking."
+        )
+
+    # 6. CAIXA DE SUGESTÕES ANÓNIMAS
     st.divider()
     st.markdown("### Caixa de Sugestões & Melhoria Contínua (100% Anónima)")
     st.write(
@@ -1286,13 +1432,13 @@ Todos os créditos laborais (horas extras, noturnas, subsídios ou formação em
                 "Atualização de Tabela / CCT",
                 "Melhoria de Design / Telemóvel",
                 "Reportar Erro Técnico",
-                "Sugestão para o Guia Legal",
+                "Sugestão para o Guia Legal / FAQ",
             ],
         )
     with col_sug2:
         texto_sugestao = st.text_area(
             "A tua sugestão (não incluas nomes próprios nem dados pessoais)",
-            placeholder="Exemplo: Seria ótimo ter uma calculadora específica para horas de banco de horas ou cálculo de indemnização por transmissão de estabelecimento...",
+            placeholder="Exemplo: Seria útil ter uma calculadora específica para subsídio de férias e Natal proporcionais ou cálculo de indemnização por despedimento...",
             max_chars=800,
             height=110,
         )
@@ -1330,7 +1476,7 @@ st.markdown(
     """
 <div class="footer-box">
 <strong>Vigilante Informado — Plataforma Independente de Literacia Laboral</strong><br>
-Arquitetura Custódia Zero (RGPD) • Sem armazenamento de documentos, nomes ou endereços IP • Os cálculos têm natureza técnica e informativa com base nos CCT publicados em BTE.
+Arquitetura Custódia Zero (RGPD) • Sem armazenamento de documentos, nomes ou endereços IP • Os cálculos têm natureza técnica e informativa com base nos CCT publicados em BTE e no Código do Trabalho.
 </div>
     """,
     unsafe_allow_html=True,
